@@ -1,13 +1,14 @@
 {
   "name": "el-lesson-alignment-tool",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "test": "tsx --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "import:cde-eld": "tsx scripts/import-cde-eld.ts"
   },
   "dependencies": {
     "next": "latest",

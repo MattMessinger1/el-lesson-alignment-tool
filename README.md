@@ -17,13 +17,18 @@ The first milestone is documentation only. The core deliverable is a practical p
 - Add only the targeted language objectives, language demands, supports, or prompts needed for CA ELD alignment.
 - Keep brief CA ELD alignment notes after the aligned lesson, not as the main output.
 - Keep the workflow simple enough for classroom teachers to use quickly.
-- Avoid automatic retention of uploads or chat history.
+- Block likely student-identifiable data and prompt-injection attempts before alignment.
+- Avoid automatic retention of uploads, lesson text, outputs, or chat history.
+- Attribute CDE/SBE standards sources without implying CDE affiliation, sponsorship, or endorsement.
 
 ## Documents
 
 - [Product Requirements Document](docs/PRD.md)
 - [CA ELD Orchestrator](docs/ORCHESTRATOR.md)
 - [SME Evaluation Guide](docs/SME_EVAL.md)
+- [Safety and Privacy Guardrails](docs/SAFETY_PRIVACY.md)
+- [Source Attribution and Rights](docs/SOURCE_RIGHTS.md)
+- [Draft CDE Permission Request](docs/CDE_PERMISSION_REQUEST.md)
 
 ## App Commands
 
@@ -32,9 +37,10 @@ npm install
 npm run dev
 npm test
 npm run build
+npm run import:cde-eld
 ```
 
-The v0.2 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with brief notes, standards used, and quality checks.
+The v0.3 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with brief notes, standards used, quality checks, and safety checks.
 
 ## Source Inputs
 
@@ -46,4 +52,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo now contains the v0.2 application scaffold plus the product documentation. The current backend uses a deterministic CA ELD orchestrator and draft standards source so the app can run without external AI credentials.
+This repo now contains the v0.3 application scaffold plus the product documentation. The current backend uses a deterministic CA ELD orchestrator, official CDE Part I/Part II source records, PLD summaries, and launch guardrails so the app can run without external AI credentials.

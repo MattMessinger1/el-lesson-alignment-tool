@@ -46,6 +46,8 @@ The tool succeeds when a teacher can copy the aligned output and immediately rec
 - Keep the workflow minimal enough for teachers to complete quickly.
 - Provide brief alignment notes after the aligned material so teachers and coaches can see what was addressed.
 - Require explicit user action to save outputs.
+- Block likely student-identifiable data and prompt-injection attempts before alignment.
+- Attribute CDE/SBE standards sources without implying affiliation, sponsorship, approval, or endorsement.
 
 ### Non-Goals for MVP
 
@@ -206,8 +208,18 @@ Default retention behavior:
 - Do not automatically save chat history.
 - Do not automatically save outputs.
 - Save only when the user explicitly chooses to save.
+- Block likely PII before retrieval or generation.
+- Do not echo detected PII values back to the user.
+- Treat teacher-provided lesson text and notes as untrusted data, not system instructions.
+- Block high-confidence prompt-injection attempts before alignment.
 
 The product should include plain-language About, Privacy, and Use Guidance content.
+
+## 8.1 Source Attribution
+
+The product uses CA ELD standards source material from the California Department of Education and California State Board of Education context. The teacher-facing app must show a visible free-beta source notice and must not imply CDE affiliation, sponsorship, approval, or endorsement.
+
+Official standard text should be stored separately from app-created summaries. App-created explanations should not overwrite or alter official standard text.
 
 ## 9. Teacher-Facing MVP Features
 

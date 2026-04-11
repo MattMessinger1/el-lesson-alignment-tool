@@ -1,4 +1,5 @@
 import standards from "../../data/ca-eld/standards.json";
+import plds from "../../data/ca-eld/plds.json";
 import type {
   EldBundle,
   EldMode,
@@ -9,6 +10,7 @@ import type {
 } from "./types";
 
 const ELD_STANDARDS = standards as EldStandardRecord[];
+const ELD_PLDS = plds as EldStandardRecord[];
 
 export function normalizeGradeSpan(input: string): GradeSpan {
   const value = input.trim().toLowerCase();
@@ -47,36 +49,69 @@ export function normalizeProficiency(input: string): EldProficiency {
 }
 
 function recordsForGrade(gradeSpan: GradeSpan) {
-  return ELD_STANDARDS.filter((record) => record.gradeSpan === gradeSpan);
+  return ELD_STANDARDS.filter((record) => record.gradeSpan === gradeSpan && record.isApplicable);
 }
 
-function choosePartI(records: EldStandardRecord[], mode: EldMode, languageFunction: string) {
+function proficiencyMatches(record: EldStandardRecord, proficiency: EldProficiency) {
+  return (
+    proficiency === "mixed" ||
+    proficiency === "unknown" ||
+    record.proficiencyLevel === proficiency ||
+    record.proficiencyLevel === "mixed"
+  );
+}
+
+function choosePartI(
+  records: EldStandardRecord[],
+  mode: EldMode,
+  languageFunction: string,
+  proficiency: EldProficiency
+) {
   return (
     records.find(
       (record) =>
         record.part === "Part I" &&
         record.mode === mode &&
-        record.languageFunction === languageFunction
+        record.languageFunction === languageFunction &&
+        proficiencyMatches(record, proficiency)
     ) ??
     records.find(
-      (record) => record.part === "Part I" && record.languageFunction === languageFunction
+      (record) =>
+        record.part === "Part I" &&
+        record.languageFunction === languageFunction &&
+        proficiencyMatches(record, proficiency)
     ) ??
-    records.find((record) => record.part === "Part I" && record.mode === mode) ??
+    records.find(
+      (record) =>
+        record.part === "Part I" && record.mode === mode && proficiencyMatches(record, proficiency)
+    ) ??
+    records.find((record) => record.part === "Part I" && proficiencyMatches(record, proficiency)) ??
     records.find((record) => record.part === "Part I")
   );
 }
 
-function choosePartII(records: EldStandardRecord[], languageFunction: string, pairedIds: string[]) {
+function choosePartII(
+  records: EldStandardRecord[],
+  languageFunction: string,
+  pairedIds: string[],
+  proficiency: EldProficiency
+) {
   return (
     records.find((record) => record.part === "Part II" && pairedIds.includes(record.id)) ??
     records.find(
-      (record) => record.part === "Part II" && record.languageFunction === languageFunction
+      (record) =>
+        record.part === "Part II" &&
+        record.languageFunction === languageFunction &&
+        proficiencyMatches(record, proficiency)
     ) ??
+    records.find((record) => record.part === "Part II" && proficiencyMatches(record, proficiency)) ??
     records.find((record) => record.part === "Part II")
   );
 }
 
-function choosePld(records: EldStandardRecord[], proficiency: EldProficiency, pairedIds: string[]) {
+function choosePld(gradeSpan: GradeSpan, proficiency: EldProficiency, pairedIds: string[]) {
+  const records = ELD_PLDS.filter((record) => record.gradeSpan === gradeSpan && record.isApplicable);
+
   return (
     records.find(
       (record) =>
@@ -105,14 +140,14 @@ export function retrieveEldBundle({
   languageFunction: string;
 }): EldBundle {
   const records = recordsForGrade(gradeSpan);
-  const partI = choosePartI(records, mode, languageFunction);
+  const partI = choosePartI(records, mode, languageFunction, proficiency);
 
   if (!partI) {
     throw new Error(`No Part I CA ELD record found for grade span ${gradeSpan}.`);
   }
 
-  const partII = choosePartII(records, languageFunction, partI.pairedStandards);
-  const pld = choosePld(records, proficiency, partI.pairedStandards);
+  const partII = choosePartII(records, languageFunction, partI.pairedStandards, proficiency);
+  const pld = choosePld(gradeSpan, proficiency, partI.pairedStandards);
 
   if (!partII || !pld) {
     throw new Error(`Incomplete CA ELD bundle for ${partI.id}.`);
@@ -134,6 +169,9 @@ export function flattenStandardsUsed(bundle: EldBundle): StandardUsed[] {
     proficiencyLevel: record.proficiencyLevel,
     languageFunction: record.languageFunction,
     teacherFriendlySummary: record.teacherFriendlySummary,
-    descriptor: record.descriptor
+    descriptor: record.descriptor,
+    standardText: record.standardText,
+    sourceName: record.sourceName,
+    sourceUrl: record.sourceUrl
   }));
 }

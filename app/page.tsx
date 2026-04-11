@@ -1,6 +1,12 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import {
+  MAX_INPUT_CHARACTERS,
+  safetyMessageForCode,
+  scanInputSafety
+} from "../lib/eld/safety";
+import type { AlignmentErrorCode, SafetyCheck } from "../lib/eld/types";
 
 const sampleLesson = `Objective
 Students will identify the central idea of an informational text and explain how details support it.
@@ -30,7 +36,10 @@ type AlignmentResponse = {
     passed: boolean;
     detail: string;
   }>;
+  safetyChecks?: SafetyCheck[];
   error?: string;
+  code?: AlignmentErrorCode;
+  categories?: string[];
 };
 
 function WandIcon() {
@@ -104,6 +113,7 @@ export default function Home() {
   const [briefAlignmentNotes, setBriefAlignmentNotes] = useState<string[]>([]);
   const [standardsUsed, setStandardsUsed] = useState<NonNullable<AlignmentResponse["standardsUsed"]>>([]);
   const [qualityChecks, setQualityChecks] = useState<NonNullable<AlignmentResponse["qualityChecks"]>>([]);
+  const [safetyChecks, setSafetyChecks] = useState<SafetyCheck[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -112,12 +122,31 @@ export default function Home() {
     () => lessonText.trim().length >= 20 && gradeBand.trim().length > 0 && !isLoading,
     [gradeBand, isLoading, lessonText]
   );
+  const allSafetyChecksPass = safetyChecks.length === 0 || safetyChecks.every((check) => check.passed);
 
   async function handleAlign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsLoading(true);
     setCopyLabel("Copy");
+    setSafetyChecks([]);
+
+    if (lessonText.length > MAX_INPUT_CHARACTERS) {
+      setError(safetyMessageForCode("INPUT_TOO_LARGE"));
+      setIsLoading(false);
+      return;
+    }
+
+    const clientSafety = scanInputSafety(
+      [lessonText, lessonGoal, contentArea, teacherNote].join("\n")
+    );
+
+    if (clientSafety.blockedCode) {
+      setError(safetyMessageForCode(clientSafety.blockedCode));
+      setSafetyChecks(clientSafety.checks);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/align", {
@@ -137,6 +166,7 @@ export default function Home() {
       const data = (await response.json()) as AlignmentResponse;
 
       if (!response.ok || data.error) {
+        setSafetyChecks(data.safetyChecks ?? []);
         throw new Error(data.error || "Alignment failed.");
       }
 
@@ -144,6 +174,7 @@ export default function Home() {
       setBriefAlignmentNotes(data.briefAlignmentNotes ?? []);
       setStandardsUsed(data.standardsUsed ?? []);
       setQualityChecks(data.qualityChecks ?? []);
+      setSafetyChecks(data.safetyChecks ?? []);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Alignment failed.");
     } finally {
@@ -152,7 +183,7 @@ export default function Home() {
   }
 
   async function handleCopy() {
-    if (!alignedText) {
+    if (!alignedText || !allSafetyChecksPass) {
       return;
     }
 
@@ -165,6 +196,14 @@ export default function Home() {
     const file = event.target.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    const allowedExtensions = /\.(txt|md|csv)$/i;
+
+    if (!allowedExtensions.test(file.name)) {
+      setError(safetyMessageForCode("UNSUPPORTED_FILE_TEXT"));
+      event.target.value = "";
       return;
     }
 
@@ -181,6 +220,7 @@ export default function Home() {
     setBriefAlignmentNotes([]);
     setStandardsUsed([]);
     setQualityChecks([]);
+    setSafetyChecks([]);
     setError("");
     setCopyLabel("Copy");
   }
@@ -192,10 +232,10 @@ export default function Home() {
           <div className="brandMark">EL</div>
           <div className="brandText">
             <strong>EL Lesson Alignment Tool</strong>
-            <span>v0.2</span>
+            <span>v0.3 free beta</span>
           </div>
         </div>
-        <div className="statusText">CA ELD alignment</div>
+        <div className="statusText">CA ELD alignment with privacy guardrails</div>
       </header>
 
       <div className="workspace">
@@ -317,7 +357,7 @@ export default function Home() {
             </div>
             <div className="miniCard">
               <strong>Privacy</strong>
-              <span>Nothing is saved by default in this v0.1 flow.</span>
+              <span>PII-like input is blocked before alignment and nothing is saved by default.</span>
             </div>
           </div>
         </section>
@@ -331,7 +371,7 @@ export default function Home() {
                   className="secondaryButton"
                   type="button"
                   onClick={handleCopy}
-                  disabled={!alignedText}
+                  disabled={!alignedText || !allSafetyChecksPass}
                 >
                   <CopyIcon />
                   {copyLabel}
@@ -344,7 +384,7 @@ export default function Home() {
                   "The aligned lesson will keep the submitted format and add CA ELD language support directly into the material."}
               </div>
 
-              {briefAlignmentNotes.length || standardsUsed.length || qualityChecks.length ? (
+              {briefAlignmentNotes.length || standardsUsed.length || qualityChecks.length || safetyChecks.length ? (
                 <div className="evidenceGrid" aria-label="Alignment evidence">
                   <section className="evidencePanel">
                     <h3>Brief Alignment Notes</h3>
@@ -378,6 +418,18 @@ export default function Home() {
                       ))}
                     </ul>
                   </section>
+
+                  <section className="evidencePanel">
+                    <h3>Safety Checks</h3>
+                    <ul>
+                      {safetyChecks.map((check) => (
+                        <li key={check.id}>
+                          <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
+                          <span>{check.detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 </div>
               ) : null}
             </div>
@@ -389,6 +441,12 @@ export default function Home() {
               Student-identifiable data should not be pasted into the tool. Use lesson
               materials without student names, IDs, or private student details.
             </span>
+          </div>
+          <div className="sourceStrip">
+            This free beta uses California English Language Development Standards published
+            by the California Department of Education and adopted by the California State
+            Board of Education. This tool is not affiliated with, sponsored by, or endorsed
+            by CDE.
           </div>
         </section>
       </div>

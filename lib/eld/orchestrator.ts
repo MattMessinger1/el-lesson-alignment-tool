@@ -4,6 +4,7 @@ import {
   normalizeProficiency,
   retrieveEldBundle
 } from "./standards";
+import { scanForPii } from "./safety";
 import type {
   AlignmentResponse,
   EldBundle,
@@ -47,12 +48,6 @@ const CONTENT_LANGUAGE_DEMANDS: Record<string, Record<string, string>> = {
     prompt: "Student Language Prompt: I think ___ because ___. I can add to ___ by saying ___."
   }
 };
-
-const STUDENT_DATA_PATTERNS = [
-  /\b(student\s*id|ssid|date of birth|dob)\b/i,
-  /\b[A-Z][a-z]+,\s*[A-Z][a-z]+\s*-\s*(IEP|504|ELPAC|score)\b/,
-  /\b\d{3}-\d{2}-\d{4}\b/
-];
 
 function cleanString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -207,8 +202,8 @@ function buildAdditions({
 }) {
   const demand = CONTENT_LANGUAGE_DEMANDS[context.contentArea] ?? CONTENT_LANGUAGE_DEMANDS.default;
   const purpose = lessonGoal || "the lesson target";
-  const partISummary = bundle.partI[0]?.teacherFriendlySummary;
-  const partIISummary = bundle.partII[0]?.teacherFriendlySummary;
+  const partISummary = bundle.partI[0]?.contentStrand ?? bundle.partI[0]?.teacherFriendlySummary;
+  const partIISummary = bundle.partII[0]?.contentStrand ?? bundle.partII[0]?.teacherFriendlySummary;
   const pldSummary = bundle.pld[0]?.teacherFriendlySummary;
 
   return [
@@ -246,10 +241,6 @@ function startsWithSameSignal(originalText: string, alignedText: string, structu
   }
 
   return firstOriginal ? alignedText.trim().startsWith(firstOriginal) : true;
-}
-
-function hasStudentData(text: string) {
-  return STUDENT_DATA_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 function containsFiveSectionReport(text: string) {
@@ -299,7 +290,7 @@ export function checkAlignmentQuality({
     {
       id: "no_student_data_detected",
       label: "No student data detected",
-      passed: !hasStudentData(originalText),
+      passed: !scanForPii(originalText).blocked,
       detail: "Input does not appear to include common student-identifiable data patterns."
     },
     {
@@ -369,6 +360,7 @@ export function alignLessonWithOrchestrator(input: {
       teacherNote: input.teacherNote
     }),
     standardsUsed,
-    qualityChecks
+    qualityChecks,
+    safetyChecks: []
   };
 }

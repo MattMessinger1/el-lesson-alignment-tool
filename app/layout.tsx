@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "EL Lesson Alignment Tool",
-  description: "Align teacher-created lessons to California ELD standards."
+  description: "Align teacher-created lessons to California ELD standards with privacy guardrails."
 };
 
 export default function RootLayout({

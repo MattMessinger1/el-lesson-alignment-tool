@@ -1,0 +1,45 @@
+# Safety and Privacy Guardrails
+
+## Input Blocking
+
+The beta blocks likely student-identifiable data before standards retrieval or alignment. If input is blocked, the app returns a stable error code and a teacher-safe message. It does not echo detected values.
+
+Blocked categories include:
+
+- Student IDs, SSIDs, local IDs, and state IDs.
+- Dates of birth and social security numbers.
+- Student names paired with IEP, 504, ELPAC, score, gradebook, reading level, discipline, behavior, health, or accommodation details.
+- Rosters, gradebook tables, student lists, parent or guardian contact details, addresses, emails, and phone numbers.
+
+The product blocks rather than redacts for v0.3. The teacher must remove private student details and retry.
+
+## Prompt-Injection Blocking
+
+Lesson text, uploads, teacher notes, and standards summaries are treated as untrusted data. The app blocks high-confidence prompt-injection patterns before alignment, including:
+
+- Requests to ignore or override system/developer instructions.
+- Requests to reveal prompts, internal policy, hidden instructions, or secrets.
+- Attempts to call tools, browse, write files, use APIs, or access external systems.
+- Hidden HTML/script payloads and encoded instruction payloads.
+
+## Agentic Risk Boundary
+
+The launch beta is generation-only. The model must not browse, send email, save files, write to a database, or call arbitrary tools. The server retrieves standards before generation and passes only an allowlisted standards bundle.
+
+## Output Checks
+
+Successful responses include `safetyChecks` for:
+
+- PII input.
+- Prompt-injection input.
+- Structured output.
+- Standards allowlist.
+- Format preservation.
+- No full rewrite.
+- Output data-loss prevention.
+
+If output checks fail, the API fails safely with `ALIGNMENT_FAILED`.
+
+## Retention
+
+The app does not persist uploaded files, pasted lesson text, generated output, or chat history by default. Logs must not include full lesson bodies or model responses.

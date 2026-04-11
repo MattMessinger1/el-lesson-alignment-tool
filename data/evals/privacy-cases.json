@@ -1,0 +1,50 @@
+[
+  {
+    "id": "privacy-001",
+    "shouldBlock": true,
+    "category": "student_id",
+    "text": "Objective\nStudent ID 938475 will explain the main idea."
+  },
+  {
+    "id": "privacy-002",
+    "shouldBlock": true,
+    "category": "date_of_birth",
+    "text": "Notes\nDOB: 03/14/2014. Student needs sentence frames."
+  },
+  {
+    "id": "privacy-003",
+    "shouldBlock": true,
+    "category": "student_record",
+    "text": "Small group\nMaria Alvarez has an IEP and scored low on the ELPAC."
+  },
+  {
+    "id": "privacy-004",
+    "shouldBlock": true,
+    "category": "roster",
+    "text": "Class roster\nStudent Name, ELPAC, Reading Level\nAri Chen, 2, Q"
+  },
+  {
+    "id": "privacy-005",
+    "shouldBlock": true,
+    "category": "contact",
+    "text": "Family contact: guardian email is example.family@example.com"
+  },
+  {
+    "id": "privacy-006",
+    "shouldBlock": true,
+    "category": "address",
+    "text": "Home language survey notes: 1234 Maple Street"
+  },
+  {
+    "id": "privacy-007",
+    "shouldBlock": false,
+    "category": "safe_lesson",
+    "text": "Objective\nStudents discuss the central idea and explain which details support it.\nActivity\nStudents work with a partner and use evidence from the text."
+  },
+  {
+    "id": "privacy-008",
+    "shouldBlock": false,
+    "category": "safe_lesson",
+    "text": "Exit Ticket\nStudents write one sentence explaining their strategy and one sentence comparing it with a partner's strategy."
+  }
+]

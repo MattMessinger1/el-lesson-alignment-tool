@@ -365,6 +365,16 @@ select {
   line-height: 1.4;
 }
 
+.sourceStrip {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.76);
+  color: var(--muted);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .sampleRow {
   display: flex;
   flex-wrap: wrap;

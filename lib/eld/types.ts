@@ -9,15 +9,26 @@ export type EldProficiency = "emerging" | "expanding" | "bridging" | "mixed" | "
 export type EldStandardRecord = {
   id: string;
   gradeSpan: GradeSpan;
+  gradeRange?: string;
+  minGrade?: number;
+  maxGrade?: number;
   part: EldPart;
   mode: EldMode | "language_resources" | "proficiency";
   proficiencyLevel: EldProficiency;
   descriptor: string;
+  standardText: string;
+  cluster?: string;
+  contentStrand?: string;
   languageFunction: string;
   languageResources: string[];
   teacherFriendlySummary: string;
   pairedStandards: string[];
-  reviewStatus: "draft_seed" | "sme_reviewed";
+  sourceName: string;
+  sourceUrl: string;
+  copyrightOwner: string;
+  importedAt: string;
+  isApplicable: boolean;
+  reviewStatus: "draft_seed" | "sme_reviewed" | "official_cde_import" | "source_summary";
 };
 
 export type EldBundle = {
@@ -60,6 +71,9 @@ export type StandardUsed = {
   languageFunction: string;
   teacherFriendlySummary: string;
   descriptor: string;
+  standardText: string;
+  sourceName: string;
+  sourceUrl: string;
 };
 
 export type QualityCheck = {
@@ -74,9 +88,33 @@ export type QualityCheck = {
   detail: string;
 };
 
+export type AlignmentErrorCode =
+  | "PII_DETECTED"
+  | "PROMPT_INJECTION_DETECTED"
+  | "INPUT_TOO_LARGE"
+  | "UNSUPPORTED_FILE_TEXT"
+  | "MODEL_CONFIG_MISSING"
+  | "ALIGNMENT_FAILED";
+
+export type SafetyCheck = {
+  id:
+    | "pii_input"
+    | "prompt_injection_input"
+    | "output_schema"
+    | "standards_allowlist"
+    | "format_preserved"
+    | "no_full_rewrite"
+    | "output_dlp";
+  label: string;
+  passed: boolean;
+  detail: string;
+  categories?: string[];
+};
+
 export type AlignmentResponse = {
   alignedText: string;
   briefAlignmentNotes: string[];
   standardsUsed: StandardUsed[];
   qualityChecks: QualityCheck[];
+  safetyChecks: SafetyCheck[];
 };

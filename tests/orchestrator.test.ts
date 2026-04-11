@@ -84,7 +84,10 @@ test("quality checks catch report format and student data", () => {
       proficiencyLevel: "mixed" as const,
       languageFunction: "explain_with_evidence",
       teacherFriendlySummary: "",
-      descriptor: ""
+      descriptor: "",
+      standardText: "",
+      sourceName: "",
+      sourceUrl: ""
     }
   ];
   const checks = checkAlignmentQuality({

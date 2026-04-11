@@ -1,0 +1,403 @@
+:root {
+  --background: #f7f4ec;
+  --foreground: #20231f;
+  --muted: #65685f;
+  --panel: #fffdf8;
+  --panel-strong: #f2ead8;
+  --line: #d8cfbd;
+  --green: #1d6b53;
+  --green-strong: #14513e;
+  --teal: #16748a;
+  --amber: #b56d18;
+  --rose: #b14646;
+  --shadow: 0 24px 70px rgba(41, 35, 23, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+button,
+textarea,
+select,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px clamp(18px, 4vw, 40px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.86);
+  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brandMark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fffdf8;
+  font-weight: 760;
+}
+
+.brandText {
+  display: grid;
+  gap: 2px;
+}
+
+.brandText strong {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.brandText span,
+.statusText {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.workspace {
+  width: min(1420px, 100%);
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(320px, 0.88fr) minmax(360px, 1.12fr);
+  gap: 22px;
+}
+
+.pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 0;
+}
+
+.sectionHeader h1,
+.sectionHeader h2 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.08;
+}
+
+.sectionHeader h2 {
+  font-size: clamp(18px, 2vw, 22px);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field label,
+.fieldsetLabel {
+  color: #393b35;
+  font-size: 13px;
+  font-weight: 680;
+}
+
+textarea,
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffefa;
+  color: var(--foreground);
+  outline: none;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(22, 116, 138, 0.16);
+}
+
+textarea {
+  min-height: 300px;
+  resize: vertical;
+  padding: 14px;
+  line-height: 1.45;
+}
+
+input,
+select {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.fileInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fileButton {
+  width: fit-content;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffefa;
+  color: var(--foreground);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fileButton:hover {
+  background: #f9f4e8;
+  border-color: #b7aa95;
+}
+
+.controlsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.primaryButton,
+.secondaryButton,
+.iconButton {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  padding: 0 18px;
+  background: var(--green);
+  color: #fffdf8;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--green-strong);
+}
+
+.secondaryButton,
+.iconButton {
+  padding: 0 14px;
+  background: #fffefa;
+  border-color: var(--line);
+  color: var(--foreground);
+}
+
+.secondaryButton:hover:not(:disabled),
+.iconButton:hover:not(:disabled) {
+  border-color: #b7aa95;
+  background: #f9f4e8;
+}
+
+.iconButton {
+  width: 44px;
+  padding: 0;
+}
+
+.buttonIcon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.outputPanel {
+  min-height: 100%;
+}
+
+.outputToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.outputBody {
+  padding: 18px;
+}
+
+.outputBox {
+  min-height: 450px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 18px;
+  line-height: 1.52;
+}
+
+.placeholder {
+  color: var(--muted);
+}
+
+.error {
+  color: #7e1f1f;
+  background: #ffe8e8;
+  border: 1px solid #f1b9b9;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.noteStrip {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid #e0cf9d;
+  background: #fff6d7;
+  color: #4b3a12;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.sampleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fffefa;
+  color: var(--foreground);
+  padding: 0 11px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.footerBand {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.miniCard {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 13px;
+  background: rgba(255, 253, 248, 0.72);
+}
+
+.miniCard strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.miniCard span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .outputBox {
+    min-height: 340px;
+  }
+}
+
+@media (max-width: 680px) {
+  .topBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .controlsGrid,
+  .footerBand {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .outputToolbar {
+    width: 100%;
+  }
+}

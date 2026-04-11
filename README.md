@@ -23,6 +23,16 @@ The first milestone is documentation only. The core deliverable is a practical p
 
 - [Product Requirements Document](docs/PRD.md)
 
+## App Commands
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+The v0.1 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output.
+
 ## Source Inputs
 
 The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloads/`:
@@ -33,4 +43,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo is intentionally documentation-first. Application code, design assets, standards data files, and implementation scaffolding are out of scope for this step.
+This repo now contains the v0.1 application scaffold plus the product documentation. The current backend uses deterministic alignment logic so the app can run without external AI credentials.

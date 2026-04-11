@@ -305,6 +305,41 @@ select {
   line-height: 1.52;
 }
 
+.evidenceGrid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.evidencePanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.82);
+  padding: 14px;
+}
+
+.evidencePanel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.evidencePanel ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.evidencePanel li {
+  margin: 7px 0;
+  line-height: 1.4;
+}
+
+.evidencePanel li span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
 .placeholder {
   color: var(--muted);
 }

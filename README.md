@@ -22,16 +22,19 @@ The first milestone is documentation only. The core deliverable is a practical p
 ## Documents
 
 - [Product Requirements Document](docs/PRD.md)
+- [CA ELD Orchestrator](docs/ORCHESTRATOR.md)
+- [SME Evaluation Guide](docs/SME_EVAL.md)
 
 ## App Commands
 
 ```bash
 npm install
 npm run dev
+npm test
 npm run build
 ```
 
-The v0.1 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output.
+The v0.2 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with brief notes, standards used, and quality checks.
 
 ## Source Inputs
 
@@ -43,4 +46,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo now contains the v0.1 application scaffold plus the product documentation. The current backend uses deterministic alignment logic so the app can run without external AI credentials.
+This repo now contains the v0.2 application scaffold plus the product documentation. The current backend uses a deterministic CA ELD orchestrator and draft standards source so the app can run without external AI credentials.

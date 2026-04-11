@@ -18,6 +18,18 @@ Write one sentence naming the central idea and one supporting detail.`;
 
 type AlignmentResponse = {
   alignedText?: string;
+  briefAlignmentNotes?: string[];
+  standardsUsed?: Array<{
+    id: string;
+    part: string;
+    teacherFriendlySummary: string;
+  }>;
+  qualityChecks?: Array<{
+    id: string;
+    label: string;
+    passed: boolean;
+    detail: string;
+  }>;
   error?: string;
 };
 
@@ -89,6 +101,9 @@ export default function Home() {
   const [contentArea, setContentArea] = useState("ELA");
   const [teacherNote, setTeacherNote] = useState("");
   const [alignedText, setAlignedText] = useState("");
+  const [briefAlignmentNotes, setBriefAlignmentNotes] = useState<string[]>([]);
+  const [standardsUsed, setStandardsUsed] = useState<NonNullable<AlignmentResponse["standardsUsed"]>>([]);
+  const [qualityChecks, setQualityChecks] = useState<NonNullable<AlignmentResponse["qualityChecks"]>>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -126,6 +141,9 @@ export default function Home() {
       }
 
       setAlignedText(data.alignedText ?? "");
+      setBriefAlignmentNotes(data.briefAlignmentNotes ?? []);
+      setStandardsUsed(data.standardsUsed ?? []);
+      setQualityChecks(data.qualityChecks ?? []);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Alignment failed.");
     } finally {
@@ -160,6 +178,9 @@ export default function Home() {
     setLessonGoal("");
     setTeacherNote("");
     setAlignedText("");
+    setBriefAlignmentNotes([]);
+    setStandardsUsed([]);
+    setQualityChecks([]);
     setError("");
     setCopyLabel("Copy");
   }
@@ -171,7 +192,7 @@ export default function Home() {
           <div className="brandMark">EL</div>
           <div className="brandText">
             <strong>EL Lesson Alignment Tool</strong>
-            <span>v0.1</span>
+            <span>v0.2</span>
           </div>
         </div>
         <div className="statusText">CA ELD alignment</div>
@@ -322,6 +343,43 @@ export default function Home() {
                 {alignedText ||
                   "The aligned lesson will keep the submitted format and add CA ELD language support directly into the material."}
               </div>
+
+              {briefAlignmentNotes.length || standardsUsed.length || qualityChecks.length ? (
+                <div className="evidenceGrid" aria-label="Alignment evidence">
+                  <section className="evidencePanel">
+                    <h3>Brief Alignment Notes</h3>
+                    <ul>
+                      {briefAlignmentNotes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>Standards Used</h3>
+                    <ul>
+                      {standardsUsed.map((standard) => (
+                        <li key={standard.id}>
+                          <strong>{standard.id}</strong>
+                          <span>{standard.teacherFriendlySummary}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>Quality Checks</h3>
+                    <ul>
+                      {qualityChecks.map((check) => (
+                        <li key={check.id}>
+                          <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
+                          <span>{check.detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              ) : null}
             </div>
           </div>
 

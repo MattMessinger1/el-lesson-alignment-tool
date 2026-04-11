@@ -1,0 +1,98 @@
+[
+  {
+    "id": "eval-001",
+    "gradeBand": "K-2",
+    "contentArea": "ELA",
+    "proficiency": "mixed",
+    "format": "prose",
+    "focus": "Students identify a character trait and explain evidence from a read-aloud."
+  },
+  {
+    "id": "eval-002",
+    "gradeBand": "K-2",
+    "contentArea": "Math",
+    "proficiency": "emerging",
+    "format": "bullets",
+    "focus": "Students explain how they sorted shapes by attributes."
+  },
+  {
+    "id": "eval-003",
+    "gradeBand": "K-2",
+    "contentArea": "Science",
+    "proficiency": "expanding",
+    "format": "table",
+    "focus": "Students describe observations from a plant growth investigation."
+  },
+  {
+    "id": "eval-004",
+    "gradeBand": "3-5",
+    "contentArea": "ELA",
+    "proficiency": "mixed",
+    "format": "prose",
+    "focus": "Students identify the central idea and explain supporting details."
+  },
+  {
+    "id": "eval-005",
+    "gradeBand": "3-5",
+    "contentArea": "Math",
+    "proficiency": "bridging",
+    "format": "numbered",
+    "focus": "Students justify a fraction comparison strategy."
+  },
+  {
+    "id": "eval-006",
+    "gradeBand": "3-5",
+    "contentArea": "Science",
+    "proficiency": "emerging",
+    "format": "table",
+    "focus": "Students use evidence to explain a cause-and-effect relationship."
+  },
+  {
+    "id": "eval-007",
+    "gradeBand": "6-8",
+    "contentArea": "ELA",
+    "proficiency": "expanding",
+    "format": "prose",
+    "focus": "Students discuss how evidence supports a claim in an article."
+  },
+  {
+    "id": "eval-008",
+    "gradeBand": "6-8",
+    "contentArea": "Math",
+    "proficiency": "mixed",
+    "format": "table",
+    "focus": "Students compare solution strategies for a linear relationship."
+  },
+  {
+    "id": "eval-009",
+    "gradeBand": "6-8",
+    "contentArea": "History",
+    "proficiency": "bridging",
+    "format": "bullets",
+    "focus": "Students interpret a primary source and explain perspective."
+  },
+  {
+    "id": "eval-010",
+    "gradeBand": "9-12",
+    "contentArea": "ELA",
+    "proficiency": "mixed",
+    "format": "prose",
+    "focus": "Students analyze how an author develops a claim with evidence."
+  },
+  {
+    "id": "eval-011",
+    "gradeBand": "9-12",
+    "contentArea": "Science",
+    "proficiency": "expanding",
+    "format": "table",
+    "focus": "Students use evidence to explain patterns in data."
+  },
+  {
+    "id": "eval-012",
+    "gradeBand": "9-12",
+    "contentArea": "History",
+    "proficiency": "emerging",
+    "format": "numbered",
+    "focus": "Students support a historical interpretation using source evidence."
+  }
+]

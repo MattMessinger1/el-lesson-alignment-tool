@@ -1,15 +1,22 @@
 # EL Lesson Alignment Tool
 
-This repository contains the product foundation for **EL Lesson Alignment Tool**, a teacher- and coach-facing planning tool for reviewing lesson and unit materials against California ELD expectations and selected content standards.
+This repository contains the product foundation for **EL Lesson Alignment Tool**, a simple teacher-facing tool for aligning existing lessons, units, and tasks to California ELD standards.
 
-The first product milestone is documentation only. The core deliverable is a practical product requirements document for an MVP focused on the **Align a Unit** workflow.
+The product should feel straightforward for teachers:
+
+1. Submit a lesson, unit, or task.
+2. Add minimal CA ELD context.
+3. Get the same lesson, unit, or task back in the same format, with CA ELD alignment added directly into it.
+
+The first milestone is documentation only. The core deliverable is a practical product requirements document for the MVP.
 
 ## Current Scope
 
-- Preserve and augment existing educator-created materials.
-- Help teachers and instructional coaches identify alignment strengths, gaps, and targeted revision opportunities.
-- Keep CA ELD Part I, Part II, and PLD expectations together whenever ELD alignment is presented.
-- Generate teacher-friendly, copy-ready revision text without rewriting the full unit by default.
+- Make CA ELD alignment the primary v1 focus.
+- Preserve the teacher's submitted format, including headings, order, bullets, numbering, and table-like structure.
+- Add only the targeted language objectives, language demands, supports, or prompts needed for CA ELD alignment.
+- Keep brief CA ELD alignment notes after the aligned lesson, not as the main output.
+- Keep the workflow simple enough for classroom teachers to use quickly.
 - Avoid automatic retention of uploads or chat history.
 
 ## Documents
@@ -26,4 +33,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo is intentionally documentation-first. Application code, design assets, standards data files, and implementation scaffolding are out of scope for this first step.
+This repo is intentionally documentation-first. Application code, design assets, standards data files, and implementation scaffolding are out of scope for this step.

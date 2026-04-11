@@ -4,6 +4,11 @@ import {
   sanitizeAlignmentRequest
 } from "../../../lib/eld/orchestrator";
 import {
+  alignLessonWithLlm,
+  AlignmentGenerationError,
+  ModelConfigMissingError
+} from "../../../lib/eld/llm";
+import {
   evaluateOutputSafety,
   MAX_INPUT_CHARACTERS,
   safetyMessageForCode,
@@ -57,6 +62,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (process.env.ELD_USE_LLM === "true") {
+      const alignment = await alignLessonWithLlm(input, {
+        inputSafetyChecks: inputSafety.checks
+      });
+
+      return NextResponse.json(alignment);
+    }
+
     const alignment = alignLessonWithOrchestrator(input);
     const formatCheck = alignment.qualityChecks.find((check) => check.id === "format_preserved");
     const rewriteCheck = alignment.qualityChecks.find((check) => check.id === "no_full_rewrite");
@@ -70,7 +83,8 @@ export async function POST(request: Request) {
         typeof alignment.alignedText === "string" &&
         Array.isArray(alignment.briefAlignmentNotes) &&
         Array.isArray(alignment.standardsUsed) &&
-        Array.isArray(alignment.qualityChecks),
+        Array.isArray(alignment.qualityChecks) &&
+        Array.isArray(alignment.changeNotes),
       formatPreserved: Boolean(formatCheck?.passed),
       noFullRewrite: Boolean(rewriteCheck?.passed)
     });
@@ -91,7 +105,25 @@ export async function POST(request: Request) {
       ...alignment,
       safetyChecks
     });
-  } catch {
+  } catch (caughtError) {
+    if (caughtError instanceof ModelConfigMissingError) {
+      return NextResponse.json(
+        { error: safetyMessageForCode("MODEL_CONFIG_MISSING"), code: "MODEL_CONFIG_MISSING" },
+        { status: 503 }
+      );
+    }
+
+    if (caughtError instanceof AlignmentGenerationError) {
+      return NextResponse.json(
+        {
+          error: safetyMessageForCode("ALIGNMENT_FAILED"),
+          code: "ALIGNMENT_FAILED",
+          safetyChecks: caughtError.safetyChecks
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: safetyMessageForCode("ALIGNMENT_FAILED"), code: "ALIGNMENT_FAILED" },
       { status: 500 }

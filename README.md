@@ -8,7 +8,7 @@ The product should feel straightforward for teachers:
 2. Add minimal CA ELD context.
 3. Get the same lesson, unit, or task back in the same format, with CA ELD alignment added directly into it.
 
-The first milestone is documentation only. The core deliverable is a practical product requirements document for the MVP.
+The current milestone is a v0.4 free beta: a Next.js frontend, a safety-gated backend, curated CA ELD records, and an LLM alignment step routed through Braintrust Gateway.
 
 ## Current Scope
 
@@ -20,11 +20,13 @@ The first milestone is documentation only. The core deliverable is a practical p
 - Block likely student-identifiable data and prompt-injection attempts before alignment.
 - Avoid automatic retention of uploads, lesson text, outputs, or chat history.
 - Attribute CDE/SBE standards sources without implying CDE affiliation, sponsorship, or endorsement.
+- Trace the LLM alignment pipeline in Braintrust for internal evals after input safety checks pass.
 
 ## Documents
 
 - [Product Requirements Document](docs/PRD.md)
 - [CA ELD Orchestrator](docs/ORCHESTRATOR.md)
+- [Braintrust Tracing](docs/BRAINTRUST_TRACING.md)
 - [SME Evaluation Guide](docs/SME_EVAL.md)
 - [Safety and Privacy Guardrails](docs/SAFETY_PRIVACY.md)
 - [Source Attribution and Rights](docs/SOURCE_RIGHTS.md)
@@ -40,7 +42,9 @@ npm run build
 npm run import:cde-eld
 ```
 
-The v0.3 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with brief notes, standards used, quality checks, and safety checks.
+Copy `.env.example` to `.env.local` for local LLM testing and provide a real `BRAINTRUST_API_KEY`. Do not commit `.env.local`.
+
+The v0.4 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with brief notes, standards used, change notes, quality checks, safety checks, `alignmentMode`, and a Braintrust `traceId` when tracing is active.
 
 ## Source Inputs
 
@@ -52,4 +56,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo now contains the v0.3 application scaffold plus the product documentation. The current backend uses a deterministic CA ELD orchestrator, official CDE Part I/Part II source records, PLD summaries, and launch guardrails so the app can run without external AI credentials.
+This repo now contains the v0.4 application scaffold plus the product documentation. The current backend uses official CDE Part I/Part II source records, PLD summaries, launch guardrails, and an LLM alignment path when `ELD_USE_LLM=true`. The deterministic orchestrator remains available for tests and local emergency mode, but production should run through the Braintrust-routed LLM path.

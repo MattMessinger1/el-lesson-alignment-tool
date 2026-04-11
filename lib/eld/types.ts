@@ -111,10 +111,22 @@ export type SafetyCheck = {
   categories?: string[];
 };
 
+export type AlignmentMode = "deterministic" | "llm";
+
+export type ChangeNote = {
+  anchor: string;
+  note: string;
+  standardIds: string[];
+  changeType: "addition" | "light_revision" | "format_preservation";
+};
+
 export type AlignmentResponse = {
   alignedText: string;
   briefAlignmentNotes: string[];
   standardsUsed: StandardUsed[];
   qualityChecks: QualityCheck[];
   safetyChecks: SafetyCheck[];
+  changeNotes: ChangeNote[];
+  traceId?: string;
+  alignmentMode: AlignmentMode;
 };

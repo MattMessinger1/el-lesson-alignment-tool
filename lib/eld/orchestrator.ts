@@ -361,6 +361,13 @@ export function alignLessonWithOrchestrator(input: {
     }),
     standardsUsed,
     qualityChecks,
-    safetyChecks: []
+    safetyChecks: [],
+    changeNotes: additions.map((addition) => ({
+      anchor: structure.likelyInsertionIndex >= 0 ? "lesson objective or goal" : "lesson opening",
+      note: addition,
+      standardIds: standardsUsed.map((standard) => standard.id),
+      changeType: "addition"
+    })),
+    alignmentMode: "deterministic"
   };
 }

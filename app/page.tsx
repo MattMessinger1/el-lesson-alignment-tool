@@ -6,7 +6,7 @@ import {
   safetyMessageForCode,
   scanInputSafety
 } from "../lib/eld/safety";
-import type { AlignmentErrorCode, SafetyCheck } from "../lib/eld/types";
+import type { AlignmentErrorCode, ChangeNote, SafetyCheck } from "../lib/eld/types";
 
 const sampleLesson = `Objective
 Students will identify the central idea of an informational text and explain how details support it.
@@ -37,6 +37,9 @@ type AlignmentResponse = {
     detail: string;
   }>;
   safetyChecks?: SafetyCheck[];
+  changeNotes?: ChangeNote[];
+  traceId?: string;
+  alignmentMode?: "deterministic" | "llm";
   error?: string;
   code?: AlignmentErrorCode;
   categories?: string[];
@@ -114,6 +117,8 @@ export default function Home() {
   const [standardsUsed, setStandardsUsed] = useState<NonNullable<AlignmentResponse["standardsUsed"]>>([]);
   const [qualityChecks, setQualityChecks] = useState<NonNullable<AlignmentResponse["qualityChecks"]>>([]);
   const [safetyChecks, setSafetyChecks] = useState<SafetyCheck[]>([]);
+  const [changeNotes, setChangeNotes] = useState<ChangeNote[]>([]);
+  const [alignmentMode, setAlignmentMode] = useState<AlignmentResponse["alignmentMode"]>();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -175,6 +180,8 @@ export default function Home() {
       setStandardsUsed(data.standardsUsed ?? []);
       setQualityChecks(data.qualityChecks ?? []);
       setSafetyChecks(data.safetyChecks ?? []);
+      setChangeNotes(data.changeNotes ?? []);
+      setAlignmentMode(data.alignmentMode);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Alignment failed.");
     } finally {
@@ -221,6 +228,8 @@ export default function Home() {
     setStandardsUsed([]);
     setQualityChecks([]);
     setSafetyChecks([]);
+    setChangeNotes([]);
+    setAlignmentMode(undefined);
     setError("");
     setCopyLabel("Copy");
   }
@@ -232,7 +241,7 @@ export default function Home() {
           <div className="brandMark">EL</div>
           <div className="brandText">
             <strong>EL Lesson Alignment Tool</strong>
-            <span>v0.3 free beta</span>
+            <span>v0.4 free beta</span>
           </div>
         </div>
         <div className="statusText">CA ELD alignment with privacy guardrails</div>
@@ -384,7 +393,11 @@ export default function Home() {
                   "The aligned lesson will keep the submitted format and add CA ELD language support directly into the material."}
               </div>
 
-              {briefAlignmentNotes.length || standardsUsed.length || qualityChecks.length || safetyChecks.length ? (
+              {briefAlignmentNotes.length ||
+              standardsUsed.length ||
+              changeNotes.length ||
+              qualityChecks.length ||
+              safetyChecks.length ? (
                 <div className="evidenceGrid" aria-label="Alignment evidence">
                   <section className="evidencePanel">
                     <h3>Brief Alignment Notes</h3>
@@ -392,6 +405,24 @@ export default function Home() {
                       {briefAlignmentNotes.map((note) => (
                         <li key={note}>{note}</li>
                       ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>Change Notes</h3>
+                    <ul>
+                      {changeNotes.map((note) => (
+                        <li key={`${note.anchor}-${note.note}`}>
+                          <strong>{note.changeType.replace("_", " ")}</strong>
+                          <span>{note.note}</span>
+                        </li>
+                      ))}
+                      {alignmentMode ? (
+                        <li>
+                          <strong>Mode</strong>
+                          <span>{alignmentMode === "llm" ? "LLM alignment with traced review" : "Deterministic local alignment"}</span>
+                        </li>
+                      ) : null}
                     </ul>
                   </section>
 

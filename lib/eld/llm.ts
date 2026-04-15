@@ -1,7 +1,6 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import * as aiSdk from "ai";
-import { Output } from "ai";
-import { initLogger, wrapAISDK, type Logger, type Span } from "braintrust";
+import { initLogger, type Logger, type Span } from "braintrust";
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { ELD_ORCHESTRATOR_SYSTEM_PROMPT } from "./llm-contract";
 import {
@@ -23,10 +22,8 @@ import type {
   StandardUsed
 } from "./types";
 
-const tracedAi = wrapAISDK(aiSdk);
 const DEFAULT_BRAINTRUST_PROJECT_NAME = "EL Lesson Alignment Tool";
 const DEFAULT_ALIGNMENT_MODEL = "gpt-5-mini";
-const DEFAULT_GATEWAY_BASE_URL = "https://gateway.braintrust.dev/v1";
 
 export const LLM_ALIGNMENT_OUTPUT_SCHEMA = z.object({
   alignedText: z.string().min(20),
@@ -75,7 +72,7 @@ export type LlmAlignmentOutput = z.infer<typeof LLM_ALIGNMENT_OUTPUT_SCHEMA>;
 export class ModelConfigMissingError extends Error {
   readonly code = "MODEL_CONFIG_MISSING";
 
-  constructor(message = "BRAINTRUST_API_KEY is required when ELD_USE_LLM=true.") {
+  constructor(message = "OPENAI_API_KEY is required when ELD_USE_LLM=true.") {
     super(message);
     this.name = "ModelConfigMissingError";
   }
@@ -342,52 +339,62 @@ export function validateLlmAlignmentOutput({
     throw new AlignmentGenerationError("Model returned unit-planning language for a lesson-only request.");
   }
 
-  return output;
+  return LLM_ALIGNMENT_OUTPUT_SCHEMA.parse(output);
 }
 
-async function defaultGenerateAlignment({ system, prompt, modelId }: GenerateAlignmentInput) {
-  const apiKey = process.env.BRAINTRUST_API_KEY;
+async function defaultGenerateAlignment({
+  system,
+  prompt,
+  modelId
+}: GenerateAlignmentInput): Promise<LlmAlignmentOutput> {
+  const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     throw new ModelConfigMissingError();
   }
 
-  const provider = createOpenAICompatible({
-    name: "braintrust",
-    baseURL: process.env.BRAINTRUST_GATEWAY_BASE_URL || DEFAULT_GATEWAY_BASE_URL,
-    apiKey,
-    supportsStructuredOutputs: true
-  });
-
-  let result: Awaited<ReturnType<typeof tracedAi.generateText>>;
+  const client = new OpenAI({ apiKey });
+  let response: Awaited<ReturnType<OpenAI["responses"]["parse"]>>;
 
   try {
-    result = await tracedAi.generateText({
-      model: provider.chatModel(modelId),
-      system,
-      prompt,
-      output: Output.object({
-        schema: LLM_ALIGNMENT_OUTPUT_SCHEMA,
-        name: "eld_alignment_response",
-        description: "Same-format lesson output with academic language supports for content teachers."
-      })
+    response = await client.responses.parse({
+      model: modelId,
+      input: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: `${prompt}\n\nReturn only a valid JSON object that matches the requested lesson-alignment schema.`
+        }
+      ],
+      text: {
+        format: zodTextFormat(LLM_ALIGNMENT_OUTPUT_SCHEMA, "eld_alignment_response")
+      }
     });
   } catch (error) {
-    const maybeGatewayConfigError =
+    const maybeModelConfigError =
       error &&
       typeof error === "object" &&
-      "responseBody" in error &&
-      typeof error.responseBody === "string" &&
-      /unknown model|provider|api key|not configured/i.test(error.responseBody);
+      (("status" in error &&
+        typeof error.status === "number" &&
+        [401, 403, 404].includes(error.status)) ||
+        ("message" in error &&
+          typeof error.message === "string" &&
+          /api key|model|not found|not configured|project|organization/i.test(error.message)));
 
-    if (maybeGatewayConfigError) {
-      throw new ModelConfigMissingError("Braintrust Gateway model/provider is not configured.");
+    if (maybeModelConfigError) {
+      throw new ModelConfigMissingError("OpenAI API key or model is not configured.");
     }
 
     throw error;
   }
 
-  return LLM_ALIGNMENT_OUTPUT_SCHEMA.parse(result.output);
+  const output = response.output_parsed;
+
+  if (!output) {
+    throw new AlignmentGenerationError("OpenAI returned an empty alignment response.");
+  }
+
+  return LLM_ALIGNMENT_OUTPUT_SCHEMA.parse(output);
 }
 
 async function runLlmPipeline({
@@ -603,7 +610,7 @@ export async function alignLessonWithLlm(
   const inputSafetyChecks = options.inputSafetyChecks ?? [];
   const logger = options.logger === undefined ? getBraintrustLogger() : options.logger;
 
-  if (!process.env.BRAINTRUST_API_KEY && !options.generateAlignment) {
+  if (!process.env.OPENAI_API_KEY && !options.generateAlignment) {
     throw new ModelConfigMissingError();
   }
 

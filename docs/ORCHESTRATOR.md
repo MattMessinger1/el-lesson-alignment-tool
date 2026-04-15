@@ -6,7 +6,7 @@ The v0.5 orchestrator is a standards-grounded, safety-gated LLM pipeline for the
 
 The app uses official CDE CA Content Standards records for CA ELD Part I and Part II in `data/ca-eld/standards.json`. PLD context lives in `data/ca-eld/plds.json` as teacher-created summaries that point back to the CDE ELD Standards publication.
 
-When `ELD_USE_LLM=true`, `/api/align` routes the generation step through Braintrust Gateway using the Vercel AI SDK and a strict Zod response schema. The deterministic aligner remains in the codebase for tests and explicit local fallback mode only. The product is lesson-only; unit planning, dashboards, and generic chat are out of scope.
+When `ELD_USE_LLM=true`, `/api/align` routes the generation step through the OpenAI Responses API and records Braintrust traces for the safety/retrieval/generation pipeline. The deterministic aligner remains in the codebase for tests and explicit local fallback mode only. The product is lesson-only; unit planning, dashboards, and generic chat are out of scope.
 
 ## Pipeline
 
@@ -17,7 +17,7 @@ When `ELD_USE_LLM=true`, `/api/align` routes the generation step through Braintr
 5. Infer grade span, proficiency range, content area, communication mode, language function, and language demand.
 6. Retrieve a CA ELD bundle where Part I, Part II, and PLD records always travel together.
 7. Build a delimited LLM prompt containing only the original lesson as data, lesson structure, inferred context, retrieved CA ELD bundle, teacher options, and lesson-focused output requirements.
-8. Generate same-format aligned lesson output plus student evidence, academic language supports, ELPAC 1/3 supports, success criteria, and teacher feedback moves through Braintrust Gateway with structured schema validation.
+8. Generate same-format aligned lesson output plus student evidence, academic language supports, ELPAC 1/3 supports, success criteria, and teacher feedback moves through OpenAI with structured schema validation.
 9. Validate that the model did not invent standards or return a report instead of the aligned lesson.
 10. Run quality and output safety checks before returning a response.
 11. Return structured API output: aligned lesson, brief notes, standards used, change notes, quality checks, safety checks, alignment mode, and trace ID when available.

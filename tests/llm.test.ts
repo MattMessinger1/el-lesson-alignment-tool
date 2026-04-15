@@ -213,11 +213,11 @@ test("mocked LLM pipeline returns llm mode with safety checks", async () => {
   assert.ok(response.teacherFeedbackMoves.length > 0);
 });
 
-test("API returns MODEL_CONFIG_MISSING when LLM is enabled without Braintrust key", async () => {
+test("API returns MODEL_CONFIG_MISSING when LLM is enabled without OpenAI key", async () => {
   const previousUseLlm = process.env.ELD_USE_LLM;
-  const previousKey = process.env.BRAINTRUST_API_KEY;
+  const previousKey = process.env.OPENAI_API_KEY;
   process.env.ELD_USE_LLM = "true";
-  delete process.env.BRAINTRUST_API_KEY;
+  delete process.env.OPENAI_API_KEY;
 
   try {
     const response = await POST(
@@ -245,9 +245,9 @@ test("API returns MODEL_CONFIG_MISSING when LLM is enabled without Braintrust ke
     }
 
     if (previousKey === undefined) {
-      delete process.env.BRAINTRUST_API_KEY;
+      delete process.env.OPENAI_API_KEY;
     } else {
-      process.env.BRAINTRUST_API_KEY = previousKey;
+      process.env.OPENAI_API_KEY = previousKey;
     }
   }
 });

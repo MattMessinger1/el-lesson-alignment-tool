@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The v0.5 LLM alignment step is traced in Braintrust so product, engineering, and SME reviewers can inspect the full single-lesson alignment pipeline when a safe lesson passes the input gates.
+The v0.5 LLM alignment step uses OpenAI and is traced in Braintrust so product, engineering, and SME reviewers can inspect the full single-lesson alignment pipeline when a safe lesson passes the input gates.
 
 ## Environment
 
@@ -10,7 +10,7 @@ Required server-side environment variables:
 
 - `BRAINTRUST_API_KEY`
 - `BRAINTRUST_PROJECT_NAME=EL Lesson Alignment Tool`
-- `BRAINTRUST_GATEWAY_BASE_URL=https://gateway.braintrust.dev/v1`
+- `OPENAI_API_KEY`
 - `ELD_ALIGNMENT_MODEL=gpt-5-mini`
 - `ELD_USE_LLM=true`
 
@@ -58,6 +58,6 @@ Scores include:
 
 ## Trace Content
 
-For internal beta evals, successful LLM traces include the full prompt, retrieved standards bundle, model output, lesson-language focus, student evidence, ELPAC supports, teacher feedback moves, internal tool results, quality checks, and safety checks. This supports debugging and SME review, but it also means safe teacher-submitted lesson content is sent to Braintrust after input safety gates pass.
+For internal beta evals, successful LLM traces include the full prompt, retrieved standards bundle, model output, lesson-language focus, student evidence, ELPAC supports, teacher feedback moves, internal tool results, quality checks, and safety checks. This supports debugging and SME review, but it also means safe teacher-submitted lesson content is sent to OpenAI and Braintrust after input safety gates pass.
 
 The app itself does not save uploads, pasted lesson text, generated output, or chat history by default. PII-like input is blocked before retrieval, model calls, or Braintrust trace creation.

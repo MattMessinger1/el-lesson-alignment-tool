@@ -8,7 +8,7 @@ The product should feel straightforward for teachers:
 2. Choose grade, content area, and EL level focus.
 3. Get the same lesson back with useful academic language supports built in.
 
-The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated backend, curated CA ELD records, and an LLM alignment step routed through Braintrust Gateway.
+The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated backend, curated CA ELD records, and an LLM alignment step using OpenAI with Braintrust tracing.
 
 ## Current Scope
 
@@ -43,7 +43,7 @@ npm run build
 npm run import:cde-eld
 ```
 
-Copy `.env.example` to `.env.local` for local LLM testing and provide a real `BRAINTRUST_API_KEY`. Do not commit `.env.local`.
+Copy `.env.example` to `.env.local` for local LLM testing and provide real `OPENAI_API_KEY` and `BRAINTRUST_API_KEY` values. Do not commit `.env.local`.
 
 The v0.5 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with student evidence, academic language supports, ELPAC 1/3 supports, student-friendly success criteria, teacher feedback moves, brief notes, standards used, change notes, quality checks, safety checks, `alignmentMode`, and a Braintrust `traceId` when tracing is active.
 
@@ -57,4 +57,4 @@ The PRD was drafted from the planning documents in `/Users/mattmessinger/Downloa
 
 ## Repo Status
 
-This repo now contains the v0.5 application scaffold plus the product documentation. The current backend uses official CDE Part I/Part II source records, PLD summaries, launch guardrails, and an LLM lesson-alignment path when `ELD_USE_LLM=true`. The deterministic orchestrator remains available for tests and local emergency mode, but production should run through the Braintrust-routed LLM path.
+This repo now contains the v0.5 application scaffold plus the product documentation. The current backend uses official CDE Part I/Part II source records, PLD summaries, launch guardrails, and an OpenAI lesson-alignment path with Braintrust tracing when `ELD_USE_LLM=true`. The deterministic orchestrator remains available for tests and local emergency mode.

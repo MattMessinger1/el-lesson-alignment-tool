@@ -11,10 +11,9 @@
     "import:cde-eld": "tsx scripts/import-cde-eld.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^2.0.41",
-    "ai": "^6.0.158",
     "braintrust": "^3.8.0",
     "next": "latest",
+    "openai": "^6.34.0",
     "react": "latest",
     "react-dom": "latest",
     "zod": "^4.3.6"

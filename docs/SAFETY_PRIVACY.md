@@ -44,4 +44,4 @@ If output checks fail, the API fails safely with `ALIGNMENT_FAILED`.
 
 The app does not persist uploaded files, pasted lesson text, generated output, or chat history by default. Application logs should not include full lesson bodies or model responses.
 
-For internal beta evals, the LLM path sends safe, post-gate alignment requests through Braintrust Gateway and records full Braintrust traces for review. Input blocked for PII or prompt injection returns before standards retrieval, model calls, or Braintrust trace creation. Teachers should still avoid pasting student-identifiable data because the correct v0.5 behavior is to block and discard, not redact.
+For internal beta evals, the LLM path sends safe, post-gate alignment requests to OpenAI and records full Braintrust traces for review. Input blocked for PII or prompt injection returns before standards retrieval, model calls, or Braintrust trace creation. Teachers should still avoid pasting student-identifiable data because the correct v0.5 behavior is to block and discard, not redact.

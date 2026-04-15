@@ -6,7 +6,7 @@ Hello,
 
 I am requesting permission to use California English Language Development Standards content in a free teacher-facing beta called EL Lesson Alignment Tool.
 
-The tool helps teachers paste an existing lesson, unit, or task and receive the same material back with light CA ELD alignment additions. The product is intended as a free instructional support tool for educators. It is not affiliated with, sponsored by, or endorsed by the California Department of Education.
+The tool helps teachers paste one existing content lesson and receive the same lesson back with light CA ELD and academic language alignment additions. The product is intended as a free instructional support tool for educators. It is not affiliated with, sponsored by, or endorsed by the California Department of Education.
 
 The beta uses:
 

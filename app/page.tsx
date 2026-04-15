@@ -24,6 +24,28 @@ Write one sentence naming the central idea and one supporting detail.`;
 
 type AlignmentResponse = {
   alignedText?: string;
+  lessonLanguageFocus?: {
+    contentGoal: string;
+    languageDemand: string;
+    studentEvidence: string;
+  };
+  studentEvidence?: string[];
+  academicLanguageSupports?: {
+    vocabulary: string[];
+    languageFunctions: string[];
+    languageFeatures: string[];
+    sentenceFrames: string[];
+    discussionOrWritingStems: string[];
+    originalModelLanguage: string[];
+  };
+  elpacSupports?: Array<{
+    level: "1" | "3";
+    proficiencyBand: "Emerging" | "Expanding";
+    supports: string[];
+    cognitiveDemandNote: string;
+  }>;
+  studentFriendlySuccessCriteria?: string[];
+  teacherFeedbackMoves?: string[];
   briefAlignmentNotes?: string[];
   standardsUsed?: Array<{
     id: string;
@@ -108,11 +130,19 @@ function UploadIcon() {
 export default function Home() {
   const [lessonText, setLessonText] = useState(sampleLesson);
   const [gradeBand, setGradeBand] = useState("3-5");
+  const [elpacLevels, setElpacLevels] = useState("1,3");
   const [proficiency, setProficiency] = useState("mixed");
-  const [lessonGoal, setLessonGoal] = useState("central idea and supporting details");
+  const [lessonGoal, setLessonGoal] = useState("central idea");
   const [contentArea, setContentArea] = useState("ELA");
+  const [contentExpectations, setContentExpectations] = useState("");
   const [teacherNote, setTeacherNote] = useState("");
   const [alignedText, setAlignedText] = useState("");
+  const [lessonLanguageFocus, setLessonLanguageFocus] = useState<AlignmentResponse["lessonLanguageFocus"]>();
+  const [studentEvidence, setStudentEvidence] = useState<string[]>([]);
+  const [academicLanguageSupports, setAcademicLanguageSupports] = useState<AlignmentResponse["academicLanguageSupports"]>();
+  const [elpacSupports, setElpacSupports] = useState<NonNullable<AlignmentResponse["elpacSupports"]>>([]);
+  const [studentFriendlySuccessCriteria, setStudentFriendlySuccessCriteria] = useState<string[]>([]);
+  const [teacherFeedbackMoves, setTeacherFeedbackMoves] = useState<string[]>([]);
   const [briefAlignmentNotes, setBriefAlignmentNotes] = useState<string[]>([]);
   const [standardsUsed, setStandardsUsed] = useState<NonNullable<AlignmentResponse["standardsUsed"]>>([]);
   const [qualityChecks, setQualityChecks] = useState<NonNullable<AlignmentResponse["qualityChecks"]>>([]);
@@ -124,8 +154,12 @@ export default function Home() {
   const [copyLabel, setCopyLabel] = useState("Copy");
 
   const canAlign = useMemo(
-    () => lessonText.trim().length >= 20 && gradeBand.trim().length > 0 && !isLoading,
-    [gradeBand, isLoading, lessonText]
+    () =>
+      lessonText.trim().length >= 20 &&
+      gradeBand.trim().length > 0 &&
+      contentArea.trim().length > 0 &&
+      !isLoading,
+    [contentArea, gradeBand, isLoading, lessonText]
   );
   const allSafetyChecksPass = safetyChecks.length === 0 || safetyChecks.every((check) => check.passed);
 
@@ -143,7 +177,7 @@ export default function Home() {
     }
 
     const clientSafety = scanInputSafety(
-      [lessonText, lessonGoal, contentArea, teacherNote].join("\n")
+      [lessonText, lessonGoal, contentArea, contentExpectations, teacherNote].join("\n")
     );
 
     if (clientSafety.blockedCode) {
@@ -162,9 +196,11 @@ export default function Home() {
         body: JSON.stringify({
           lessonText,
           gradeBand,
+          elpacLevels: elpacLevels.split(",").map((level) => level.trim()).filter(Boolean),
           proficiency,
           lessonGoal,
           contentArea,
+          contentExpectations,
           teacherNote
         })
       });
@@ -176,6 +212,12 @@ export default function Home() {
       }
 
       setAlignedText(data.alignedText ?? "");
+      setLessonLanguageFocus(data.lessonLanguageFocus);
+      setStudentEvidence(data.studentEvidence ?? []);
+      setAcademicLanguageSupports(data.academicLanguageSupports);
+      setElpacSupports(data.elpacSupports ?? []);
+      setStudentFriendlySuccessCriteria(data.studentFriendlySuccessCriteria ?? []);
+      setTeacherFeedbackMoves(data.teacherFeedbackMoves ?? []);
       setBriefAlignmentNotes(data.briefAlignmentNotes ?? []);
       setStandardsUsed(data.standardsUsed ?? []);
       setQualityChecks(data.qualityChecks ?? []);
@@ -222,8 +264,15 @@ export default function Home() {
   function handleReset() {
     setLessonText("");
     setLessonGoal("");
+    setContentExpectations("");
     setTeacherNote("");
     setAlignedText("");
+    setLessonLanguageFocus(undefined);
+    setStudentEvidence([]);
+    setAcademicLanguageSupports(undefined);
+    setElpacSupports([]);
+    setStudentFriendlySuccessCriteria([]);
+    setTeacherFeedbackMoves([]);
     setBriefAlignmentNotes([]);
     setStandardsUsed([]);
     setQualityChecks([]);
@@ -241,22 +290,22 @@ export default function Home() {
           <div className="brandMark">EL</div>
           <div className="brandText">
             <strong>EL Lesson Alignment Tool</strong>
-            <span>v0.4 free beta</span>
+            <span>v0.5 free beta</span>
           </div>
         </div>
-        <div className="statusText">CA ELD alignment with privacy guardrails</div>
+        <div className="statusText">Academic language support for content teachers</div>
       </header>
 
       <div className="workspace">
         <section className="pane">
           <div className="panel">
             <div className="sectionHeader">
-              <h1>Align a lesson</h1>
+              <h1>Align Lesson</h1>
             </div>
 
             <form className="form" onSubmit={handleAlign}>
               <div className="field">
-                <label htmlFor="lessonText">Lesson, unit, or task</label>
+                <label htmlFor="lessonText">Lesson</label>
                 <label className="fileButton" htmlFor="lessonFile">
                   <UploadIcon />
                   Upload text file
@@ -278,7 +327,7 @@ export default function Home() {
 
               <div className="controlsGrid">
                 <div className="field">
-                  <label htmlFor="gradeBand">Grade band</label>
+                  <label htmlFor="gradeBand">Grade</label>
                   <select
                     id="gradeBand"
                     value={gradeBand}
@@ -293,35 +342,31 @@ export default function Home() {
                 </div>
 
                 <div className="field">
-                  <label htmlFor="proficiency">ELD range</label>
-                  <select
-                    id="proficiency"
-                    value={proficiency}
-                    onChange={(event) => setProficiency(event.target.value)}
-                  >
-                    <option value="mixed">Mixed</option>
-                    <option value="emerging">Emerging</option>
-                    <option value="expanding">Expanding</option>
-                    <option value="bridging">Bridging</option>
-                    <option value="unknown">Not sure</option>
-                  </select>
+                  <label htmlFor="contentArea">Content area</label>
+                  <input
+                    id="contentArea"
+                    value={contentArea}
+                    onChange={(event) => setContentArea(event.target.value)}
+                    placeholder="Required"
+                  />
                 </div>
               </div>
 
-              {error ? <div className="error">{error}</div> : null}
-
-              <div className="actions">
-                <button className="primaryButton" type="submit" disabled={!canAlign}>
-                  <WandIcon />
-                  {isLoading ? "Aligning" : "Align to CA ELD"}
-                </button>
-                <button className="secondaryButton" type="button" onClick={handleReset}>
-                  <ResetIcon />
-                  Clear
-                </button>
-              </div>
-
               <div className="controlsGrid">
+                <div className="field">
+                  <label htmlFor="proficiency">ELPAC focus</label>
+                  <select
+                    id="proficiency"
+                    value={elpacLevels}
+                    onChange={(event) => {
+                      setElpacLevels(event.target.value);
+                      setProficiency("mixed");
+                    }}
+                  >
+                    <option value="1,3">Levels 1 and 3</option>
+                  </select>
+                </div>
+
                 <div className="field">
                   <label htmlFor="lessonGoal">Lesson goal</label>
                   <input
@@ -331,16 +376,17 @@ export default function Home() {
                     placeholder="Optional"
                   />
                 </div>
+              </div>
 
-                <div className="field">
-                  <label htmlFor="contentArea">Content area</label>
-                  <input
-                    id="contentArea"
-                    value={contentArea}
-                    onChange={(event) => setContentArea(event.target.value)}
-                    placeholder="Optional"
-                  />
-                </div>
+              <div className="field">
+                <label htmlFor="contentExpectations">Content expectations or standards</label>
+                <textarea
+                  className="smallTextarea"
+                  id="contentExpectations"
+                  value={contentExpectations}
+                  onChange={(event) => setContentExpectations(event.target.value)}
+                  placeholder="Optional: paste the standard, objective, or success criteria your curriculum expects."
+                />
               </div>
 
               <div className="field">
@@ -352,21 +398,34 @@ export default function Home() {
                   placeholder="Optional"
                 />
               </div>
+
+              {error ? <div className="error">{error}</div> : null}
+
+              <div className="actions">
+                <button className="primaryButton" type="submit" disabled={!canAlign}>
+                  <WandIcon />
+                  {isLoading ? "Aligning" : "Align Lesson"}
+                </button>
+                <button className="secondaryButton" type="button" onClick={handleReset}>
+                  <ResetIcon />
+                  Clear
+                </button>
+              </div>
             </form>
           </div>
 
           <div className="footerBand">
             <div className="miniCard">
               <strong>Format</strong>
-              <span>Headings, sequence, bullets, and tables stay recognizable.</span>
+              <span>The lesson comes back in a recognizable teacher-ready shape.</span>
             </div>
             <div className="miniCard">
-              <strong>Alignment</strong>
-              <span>Language goals, prompts, and supports are added where they fit.</span>
+              <strong>Language</strong>
+              <span>Students get clearer ways to say, do, and write the content learning.</span>
             </div>
             <div className="miniCard">
-              <strong>Privacy</strong>
-              <span>PII-like input is blocked before alignment and nothing is saved by default.</span>
+              <strong>ELPAC</strong>
+              <span>Level 1 and 3 supports keep the same cognitive expectation.</span>
             </div>
           </div>
         </section>
@@ -390,17 +449,109 @@ export default function Home() {
             <div className="outputBody">
               <div className={alignedText ? "outputBox" : "outputBox placeholder"}>
                 {alignedText ||
-                  "The aligned lesson will keep the submitted format and add CA ELD language support directly into the material."}
+                  "The aligned lesson will keep the submitted format and add academic language support directly into the material."}
               </div>
 
-              {briefAlignmentNotes.length ||
+              {lessonLanguageFocus ? (
+                <section className="focusPanel" aria-label="Why this helps English learners">
+                  <h3>Why this helps ELs</h3>
+                  <p>
+                    <strong>Goal:</strong> {lessonLanguageFocus.contentGoal}
+                  </p>
+                  <p>
+                    <strong>Language demand:</strong> {lessonLanguageFocus.languageDemand}
+                  </p>
+                  <p>
+                    <strong>Evidence:</strong> {lessonLanguageFocus.studentEvidence}
+                  </p>
+                </section>
+              ) : null}
+
+              {lessonLanguageFocus ||
+              studentEvidence.length ||
+              academicLanguageSupports ||
+              elpacSupports.length ||
+              studentFriendlySuccessCriteria.length ||
+              teacherFeedbackMoves.length ||
+              briefAlignmentNotes.length ||
               standardsUsed.length ||
               changeNotes.length ||
               qualityChecks.length ||
               safetyChecks.length ? (
                 <div className="evidenceGrid" aria-label="Alignment evidence">
                   <section className="evidencePanel">
-                    <h3>Brief Alignment Notes</h3>
+                    <h3>Student Evidence</h3>
+                    <ul>
+                      {studentEvidence.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>Success Criteria</h3>
+                    <ul>
+                      {studentFriendlySuccessCriteria.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>ELPAC Supports</h3>
+                    <ul>
+                      {elpacSupports.map((support) => (
+                        <li key={support.level}>
+                          <strong>Level {support.level}: {support.proficiencyBand}</strong>
+                          <span>{support.cognitiveDemandNote}</span>
+                          <span>{support.supports.join(" ")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="evidencePanel">
+                    <h3>Teacher Moves</h3>
+                    <ul>
+                      {teacherFeedbackMoves.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  {academicLanguageSupports ? (
+                    <section className="evidencePanel">
+                      <h3>Academic Language</h3>
+                      <ul>
+                        <li>
+                          <strong>Vocabulary</strong>
+                          <span>{academicLanguageSupports.vocabulary.join(", ")}</span>
+                        </li>
+                        <li>
+                          <strong>Functions</strong>
+                          <span>{academicLanguageSupports.languageFunctions.join(", ")}</span>
+                        </li>
+                        <li>
+                          <strong>Frames and stems</strong>
+                          <span>
+                            {[
+                              ...academicLanguageSupports.sentenceFrames,
+                              ...academicLanguageSupports.discussionOrWritingStems
+                            ].join(" ")}
+                          </span>
+                        </li>
+                        {academicLanguageSupports.originalModelLanguage.length ? (
+                          <li>
+                            <strong>Original model language</strong>
+                            <span>{academicLanguageSupports.originalModelLanguage.join(" ")}</span>
+                          </li>
+                        ) : null}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  <section className="evidencePanel">
+                    <h3>Brief Notes</h3>
                     <ul>
                       {briefAlignmentNotes.map((note) => (
                         <li key={note}>{note}</li>

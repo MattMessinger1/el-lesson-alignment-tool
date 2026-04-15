@@ -45,6 +45,13 @@ Students write one supporting detail.`,
   assert.ok(response.alignedText.includes("Exit Ticket"));
   assert.ok(response.alignedText.includes("Language Objective:"));
   assert.ok(response.briefAlignmentNotes.length >= 3);
+  assert.equal(response.lessonLanguageFocus.contentGoal, "central idea");
+  assert.ok(response.studentEvidence.some((item) => /discuss|write|explain/i.test(item)));
+  assert.ok(response.academicLanguageSupports.sentenceFrames.length > 0);
+  assert.ok(response.elpacSupports.some((support) => support.level === "1"));
+  assert.ok(response.elpacSupports.some((support) => support.level === "3"));
+  assert.ok(response.studentFriendlySuccessCriteria.length > 0);
+  assert.ok(response.teacherFeedbackMoves.length > 0);
   assert.ok(response.standardsUsed.some((standard) => standard.part === "Part I"));
   assert.ok(response.standardsUsed.some((standard) => standard.part === "Part II"));
   assert.ok(response.standardsUsed.some((standard) => standard.part === "PLD"));
@@ -113,6 +120,9 @@ test("SME rubric and eval set cover required review dimensions", () => {
     "teacher_usability",
     "format_preservation",
     "intervention_quality",
+    "access_without_lowered_demand",
+    "student_facing_clarity",
+    "feedback_usefulness",
     "safety_privacy"
   ]);
   assert.ok(examples.length >= 12);

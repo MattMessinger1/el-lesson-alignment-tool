@@ -184,6 +184,10 @@ textarea {
   line-height: 1.45;
 }
 
+.smallTextarea {
+  min-height: 86px;
+}
+
 input,
 select {
   min-height: 44px;
@@ -309,6 +313,24 @@ select {
   display: grid;
   gap: 12px;
   margin-top: 14px;
+}
+
+.focusPanel {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6fbf7;
+  padding: 14px;
+  line-height: 1.42;
+}
+
+.focusPanel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.focusPanel p {
+  margin: 6px 0;
 }
 
 .evidencePanel {

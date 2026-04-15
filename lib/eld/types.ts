@@ -39,10 +39,14 @@ export type EldBundle = {
 
 export type AlignmentRequest = {
   lessonText?: unknown;
+  gradeLevel?: unknown;
   gradeBand?: unknown;
+  elpacLevels?: unknown;
   proficiency?: unknown;
   lessonGoal?: unknown;
   contentArea?: unknown;
+  contentExpectations?: unknown;
+  contentStandardIds?: unknown;
   teacherNote?: unknown;
 };
 
@@ -120,8 +124,36 @@ export type ChangeNote = {
   changeType: "addition" | "light_revision" | "format_preservation";
 };
 
+export type LessonLanguageFocus = {
+  contentGoal: string;
+  languageDemand: string;
+  studentEvidence: string;
+};
+
+export type AcademicLanguageSupports = {
+  vocabulary: string[];
+  languageFunctions: string[];
+  languageFeatures: string[];
+  sentenceFrames: string[];
+  discussionOrWritingStems: string[];
+  originalModelLanguage: string[];
+};
+
+export type ElpacSupport = {
+  level: "1" | "3";
+  proficiencyBand: "Emerging" | "Expanding";
+  supports: string[];
+  cognitiveDemandNote: string;
+};
+
 export type AlignmentResponse = {
   alignedText: string;
+  lessonLanguageFocus: LessonLanguageFocus;
+  studentEvidence: string[];
+  academicLanguageSupports: AcademicLanguageSupports;
+  elpacSupports: ElpacSupport[];
+  studentFriendlySuccessCriteria: string[];
+  teacherFeedbackMoves: string[];
   briefAlignmentNotes: string[];
   standardsUsed: StandardUsed[];
   qualityChecks: QualityCheck[];

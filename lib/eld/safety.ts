@@ -18,6 +18,9 @@ type PatternRule = {
   pattern: RegExp;
 };
 
+const STUDENT_RECORD_TERMS =
+  "(?:IEP|iep|504|ELPAC|Elpac|elpac|score|Score|gradebook|Gradebook|reading\\s*level|Reading\\s*level|discipline|Discipline|behavior|Behavior|health|Health|accommodation|Accommodation)";
+
 const PII_RULES: PatternRule[] = [
   {
     category: "student_id",
@@ -59,13 +62,17 @@ const PII_RULES: PatternRule[] = [
     category: "student_record",
     label: "named student record",
     severity: "high",
-    pattern: /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}\b.{0,60}\b(IEP|504|ELPAC|score|gradebook|reading\s*level|discipline|behavior|health|accommodation)\b/i
+    pattern: new RegExp(
+      `\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+){1,2}\\b.{0,60}\\b${STUDENT_RECORD_TERMS}\\b`
+    )
   },
   {
     category: "student_record",
     label: "named student record",
     severity: "high",
-    pattern: /\b(IEP|504|ELPAC|score|gradebook|reading\s*level|discipline|behavior|health|accommodation)\b.{0,60}\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}\b/i
+    pattern: new RegExp(
+      `\\b${STUDENT_RECORD_TERMS}\\b.{0,60}\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+){1,2}\\b`
+    )
   },
   {
     category: "roster",
@@ -231,6 +238,7 @@ function extractStandardIds(text: string) {
 export function evaluateOutputSafety({
   alignedText,
   briefAlignmentNotes,
+  additionalOutputText = [],
   standardsUsed,
   allowedStandardIds,
   schemaValid,
@@ -239,13 +247,14 @@ export function evaluateOutputSafety({
 }: {
   alignedText: string;
   briefAlignmentNotes: string[];
+  additionalOutputText?: string[];
   standardsUsed: StandardUsed[];
   allowedStandardIds: string[];
   schemaValid: boolean;
   formatPreserved: boolean;
   noFullRewrite: boolean;
 }): SafetyCheck[] {
-  const combinedOutput = [alignedText, ...briefAlignmentNotes].join("\n");
+  const combinedOutput = [alignedText, ...briefAlignmentNotes, ...additionalOutputText].join("\n");
   const outputPii = scanForPii(combinedOutput);
   const riskyOutput = OUTPUT_RISK_PATTERNS.some((pattern) => pattern.test(combinedOutput));
   const allowedIds = new Set(allowedStandardIds);

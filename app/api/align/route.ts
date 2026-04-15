@@ -36,17 +36,21 @@ export async function POST(request: Request) {
 
   if (input.lessonText.length < 20) {
     return NextResponse.json(
-      { error: "Add a little more lesson, unit, or task text before aligning.", code: "ALIGNMENT_FAILED" },
+      { error: "Add a little more lesson text before aligning.", code: "ALIGNMENT_FAILED" },
       { status: 400 }
     );
   }
 
   if (!input.gradeBand) {
-    return NextResponse.json({ error: "Choose a grade band.", code: "ALIGNMENT_FAILED" }, { status: 400 });
+    return NextResponse.json({ error: "Choose a grade or grade band.", code: "ALIGNMENT_FAILED" }, { status: 400 });
+  }
+
+  if (!input.contentArea) {
+    return NextResponse.json({ error: "Choose a content area.", code: "ALIGNMENT_FAILED" }, { status: 400 });
   }
 
   const inputSafety = scanInputSafety(
-    [input.lessonText, input.lessonGoal, input.contentArea, input.teacherNote].join("\n")
+    [input.lessonText, input.lessonGoal, input.contentArea, input.contentExpectations, input.teacherNote].join("\n")
   );
 
   if (inputSafety.blockedCode) {
@@ -77,10 +81,34 @@ export async function POST(request: Request) {
     const outputSafety = evaluateOutputSafety({
       alignedText: alignment.alignedText,
       briefAlignmentNotes: alignment.briefAlignmentNotes,
+      additionalOutputText: [
+        alignment.lessonLanguageFocus.contentGoal,
+        alignment.lessonLanguageFocus.languageDemand,
+        alignment.lessonLanguageFocus.studentEvidence,
+        ...alignment.studentEvidence,
+        ...alignment.academicLanguageSupports.vocabulary,
+        ...alignment.academicLanguageSupports.languageFunctions,
+        ...alignment.academicLanguageSupports.languageFeatures,
+        ...alignment.academicLanguageSupports.sentenceFrames,
+        ...alignment.academicLanguageSupports.discussionOrWritingStems,
+        ...alignment.academicLanguageSupports.originalModelLanguage,
+        ...alignment.elpacSupports.flatMap((support) => [
+          support.cognitiveDemandNote,
+          ...support.supports
+        ]),
+        ...alignment.studentFriendlySuccessCriteria,
+        ...alignment.teacherFeedbackMoves
+      ],
       standardsUsed: alignment.standardsUsed,
       allowedStandardIds,
       schemaValid:
         typeof alignment.alignedText === "string" &&
+        typeof alignment.lessonLanguageFocus?.contentGoal === "string" &&
+        Array.isArray(alignment.studentEvidence) &&
+        Array.isArray(alignment.academicLanguageSupports?.sentenceFrames) &&
+        Array.isArray(alignment.elpacSupports) &&
+        Array.isArray(alignment.studentFriendlySuccessCriteria) &&
+        Array.isArray(alignment.teacherFeedbackMoves) &&
         Array.isArray(alignment.briefAlignmentNotes) &&
         Array.isArray(alignment.standardsUsed) &&
         Array.isArray(alignment.qualityChecks) &&

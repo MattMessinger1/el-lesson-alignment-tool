@@ -6,6 +6,9 @@ export type SmeRubricCategory = {
     | "teacher_usability"
     | "format_preservation"
     | "intervention_quality"
+    | "access_without_lowered_demand"
+    | "student_facing_clarity"
+    | "feedback_usefulness"
     | "safety_privacy";
   label: string;
   focus: string;
@@ -48,6 +51,24 @@ export const SME_RUBRIC: SmeRubricCategory[] = [
     label: "Intervention quality",
     focus: "Additions are light, targeted, and not generic.",
     evidence: "Support is connected to the actual task and proficiency context."
+  },
+  {
+    id: "access_without_lowered_demand",
+    label: "Access without lowered demand",
+    focus: "ELPAC 1 and 3 supports preserve the same content expectation.",
+    evidence: "Scaffolds change access through language supports, not the learning target."
+  },
+  {
+    id: "student_facing_clarity",
+    label: "Student-facing clarity",
+    focus: "Success criteria combine content and academic language expectations.",
+    evidence: "Criteria are copy-ready, student-friendly, and tied to the lesson evidence."
+  },
+  {
+    id: "feedback_usefulness",
+    label: "Feedback usefulness",
+    focus: "Teacher moves support language growth during the lesson.",
+    evidence: "Feedback prompts are specific, actionable, and connected to student language use."
   },
   {
     id: "safety_privacy",

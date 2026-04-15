@@ -30,6 +30,32 @@ const DEFAULT_GATEWAY_BASE_URL = "https://gateway.braintrust.dev/v1";
 
 export const LLM_ALIGNMENT_OUTPUT_SCHEMA = z.object({
   alignedText: z.string().min(20),
+  lessonLanguageFocus: z.object({
+    contentGoal: z.string().min(1),
+    languageDemand: z.string().min(1),
+    studentEvidence: z.string().min(1)
+  }),
+  studentEvidence: z.array(z.string().min(1)).min(1).max(6),
+  academicLanguageSupports: z.object({
+    vocabulary: z.array(z.string().min(1)).min(1).max(12),
+    languageFunctions: z.array(z.string().min(1)).min(1).max(6),
+    languageFeatures: z.array(z.string().min(1)).min(1).max(8),
+    sentenceFrames: z.array(z.string().min(1)).min(1).max(8),
+    discussionOrWritingStems: z.array(z.string().min(1)).min(1).max(8),
+    originalModelLanguage: z.array(z.string().min(1)).max(4)
+  }),
+  elpacSupports: z
+    .array(
+      z.object({
+        level: z.enum(["1", "3"]),
+        proficiencyBand: z.enum(["Emerging", "Expanding"]),
+        supports: z.array(z.string().min(1)).min(1).max(6),
+        cognitiveDemandNote: z.string().min(1)
+      })
+    )
+    .length(2),
+  studentFriendlySuccessCriteria: z.array(z.string().min(1)).min(1).max(6),
+  teacherFeedbackMoves: z.array(z.string().min(1)).min(1).max(8),
   briefAlignmentNotes: z.array(z.string().min(1)).min(1).max(6),
   changeNotes: z
     .array(
@@ -68,10 +94,14 @@ export class AlignmentGenerationError extends Error {
 
 type SanitizedAlignmentInput = {
   lessonText: string;
+  gradeLevel?: string;
   gradeBand: string;
+  elpacLevels?: string[];
   proficiency: string;
   lessonGoal: string;
   contentArea: string;
+  contentExpectations?: string;
+  contentStandardIds?: string[];
   teacherNote: string;
 };
 
@@ -236,9 +266,12 @@ export function buildLlmAlignmentPrompt({
   bundle: EldBundle;
   teacherOptions: {
     gradeBand: string;
+    elpacLevels?: string[];
     proficiency: string;
     lessonGoal: string;
     contentArea: string;
+    contentExpectations?: string;
+    contentStandardIds?: string[];
     teacherNote: string;
   };
 }) {
@@ -251,7 +284,17 @@ export function buildLlmAlignmentPrompt({
     block("TEACHER_OPTIONS", teacherOptions),
     block("OUTPUT_REQUIREMENTS", {
       alignedText:
-        "Return the teacher's material in the same format. Preserve headings, order, tables, bullets, numbering, and wording. Add or lightly revise only the language needed for CA ELD alignment.",
+        "Return the teacher's lesson in the same format. Preserve headings, order, tables, bullets, numbering, and wording. Add only high-value academic language supports directly into useful locations.",
+      lessonLanguageFocus:
+        "Summarize the content goal, language demand, and what students must say, do, or write as evidence of learning.",
+      academicLanguageSupports:
+        "Provide vocabulary, language functions, language features, sentence frames, discussion/writing stems, and short original model language. Do not use copyrighted mentor text.",
+      elpacSupports:
+        "Provide supports for ELPAC 1 and ELPAC 3 that keep the same cognitive expectation as English-speaking peers.",
+      studentFriendlySuccessCriteria:
+        "Write copy-ready success criteria that combine content expectations and academic language expectations.",
+      teacherFeedbackMoves:
+        "Write specific things a teacher can say or do during the lesson to support language growth.",
       briefAlignmentNotes:
         "After the aligned lesson, provide short notes naming the retrieved CA ELD expectations and language demand. Notes are secondary and must not become the main output.",
       changeNotes:
@@ -280,6 +323,8 @@ export function validateLlmAlignmentOutput({
   const allowed = new Set(allowedStandardIds);
   const changeNoteIds = output.changeNotes.flatMap((note) => note.standardIds);
   const inventedChangeNoteIds = changeNoteIds.filter((id) => !allowed.has(id));
+  const hasElpac1 = output.elpacSupports.some((support) => support.level === "1");
+  const hasElpac3 = output.elpacSupports.some((support) => support.level === "3");
 
   if (inventedChangeNoteIds.length > 0) {
     throw new AlignmentGenerationError("Model returned a standard ID outside the retrieved bundle.");
@@ -287,6 +332,14 @@ export function validateLlmAlignmentOutput({
 
   if (containsReportShape(output.alignedText)) {
     throw new AlignmentGenerationError("Model returned a report instead of the aligned lesson.");
+  }
+
+  if (!hasElpac1 || !hasElpac3) {
+    throw new AlignmentGenerationError("Model did not return both ELPAC 1 and ELPAC 3 supports.");
+  }
+
+  if (/unit plan|unit sequence|lesson sequence/i.test(output.lessonLanguageFocus.contentGoal)) {
+    throw new AlignmentGenerationError("Model returned unit-planning language for a lesson-only request.");
   }
 
   return output;
@@ -316,7 +369,7 @@ async function defaultGenerateAlignment({ system, prompt, modelId }: GenerateAli
       output: Output.object({
         schema: LLM_ALIGNMENT_OUTPUT_SCHEMA,
         name: "eld_alignment_response",
-        description: "Same-format CA ELD aligned lesson output with brief notes."
+        description: "Same-format lesson output with academic language supports for content teachers."
       })
     });
   } catch (error) {
@@ -407,9 +460,12 @@ async function runLlmPipeline({
     bundle,
     teacherOptions: {
       gradeBand: input.gradeBand,
+      elpacLevels: input.elpacLevels?.length ? input.elpacLevels : ["1", "3"],
       proficiency: input.proficiency,
       lessonGoal: input.lessonGoal,
       contentArea: input.contentArea,
+      contentExpectations: input.contentExpectations,
+      contentStandardIds: input.contentStandardIds,
       teacherNote: input.teacherNote
     }
   });
@@ -462,6 +518,24 @@ async function runLlmPipeline({
       evaluateOutputSafety({
         alignedText: validatedOutput.alignedText,
         briefAlignmentNotes: validatedOutput.briefAlignmentNotes,
+        additionalOutputText: [
+          validatedOutput.lessonLanguageFocus.contentGoal,
+          validatedOutput.lessonLanguageFocus.languageDemand,
+          validatedOutput.lessonLanguageFocus.studentEvidence,
+          ...validatedOutput.studentEvidence,
+          ...validatedOutput.academicLanguageSupports.vocabulary,
+          ...validatedOutput.academicLanguageSupports.languageFunctions,
+          ...validatedOutput.academicLanguageSupports.languageFeatures,
+          ...validatedOutput.academicLanguageSupports.sentenceFrames,
+          ...validatedOutput.academicLanguageSupports.discussionOrWritingStems,
+          ...validatedOutput.academicLanguageSupports.originalModelLanguage,
+          ...validatedOutput.elpacSupports.flatMap((support) => [
+            support.cognitiveDemandNote,
+            ...support.supports
+          ]),
+          ...validatedOutput.studentFriendlySuccessCriteria,
+          ...validatedOutput.teacherFeedbackMoves
+        ],
         standardsUsed,
         allowedStandardIds: standardsUsed.map((standard) => standard.id),
         schemaValid: true,
@@ -481,6 +555,12 @@ async function runLlmPipeline({
 
   const response: AlignmentResponse = {
     alignedText: validatedOutput.alignedText.trim(),
+    lessonLanguageFocus: validatedOutput.lessonLanguageFocus,
+    studentEvidence: validatedOutput.studentEvidence,
+    academicLanguageSupports: validatedOutput.academicLanguageSupports,
+    elpacSupports: validatedOutput.elpacSupports,
+    studentFriendlySuccessCriteria: validatedOutput.studentFriendlySuccessCriteria,
+    teacherFeedbackMoves: validatedOutput.teacherFeedbackMoves,
     briefAlignmentNotes,
     standardsUsed,
     qualityChecks,

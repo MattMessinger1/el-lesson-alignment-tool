@@ -105,5 +105,30 @@ test("safe API response includes passing safety checks", async () => {
 
   assert.equal(response.status, 200);
   assert.ok(data.alignedText.includes("Language Objective:"));
+  assert.ok(data.studentEvidence.length > 0);
+  assert.ok(data.elpacSupports.some((support: { level: string }) => support.level === "1"));
+  assert.ok(data.elpacSupports.some((support: { level: string }) => support.level === "3"));
+  assert.ok(data.teacherFeedbackMoves.length > 0);
   assert.ok(data.safetyChecks.every((check: { passed: boolean }) => check.passed));
+});
+
+test("API requires content area for content-teacher workflow", async () => {
+  const response = await POST(
+    new Request("http://localhost/api/align", {
+      method: "POST",
+      body: JSON.stringify({
+        lessonText:
+          "Objective\nStudents explain the central idea with evidence.\nActivity\nStudents discuss details with a partner.",
+        gradeBand: "3-5",
+        proficiency: "expanding",
+        lessonGoal: "central idea",
+        contentArea: "",
+        teacherNote: ""
+      })
+    })
+  );
+  const data = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(data.error, "Choose a content area.");
 });

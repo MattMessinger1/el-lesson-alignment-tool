@@ -11,7 +11,7 @@ Blocked categories include:
 - Student names paired with IEP, 504, ELPAC, score, gradebook, reading level, discipline, behavior, health, or accommodation details.
 - Rosters, gradebook tables, student lists, parent or guardian contact details, addresses, emails, and phone numbers.
 
-The product blocks rather than redacts for v0.4. The teacher must remove private student details and retry.
+The product blocks rather than redacts for v0.5. The teacher must remove private student details and retry.
 
 ## Prompt-Injection Blocking
 
@@ -44,4 +44,4 @@ If output checks fail, the API fails safely with `ALIGNMENT_FAILED`.
 
 The app does not persist uploaded files, pasted lesson text, generated output, or chat history by default. Application logs should not include full lesson bodies or model responses.
 
-For internal beta evals, the LLM path sends safe, post-gate alignment requests through Braintrust Gateway and records full Braintrust traces for review. Input blocked for PII or prompt injection returns before standards retrieval, model calls, or Braintrust trace creation. Teachers should still avoid pasting student-identifiable data because the correct v0.4 behavior is to block and discard, not redact.
+For internal beta evals, the LLM path sends safe, post-gate alignment requests through Braintrust Gateway and records full Braintrust traces for review. Input blocked for PII or prompt injection returns before standards retrieval, model calls, or Braintrust trace creation. Teachers should still avoid pasting student-identifiable data because the correct v0.5 behavior is to block and discard, not redact.

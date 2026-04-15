@@ -10,6 +10,7 @@ import type {
   EldBundle,
   EldMode,
   EldProficiency,
+  ElpacSupport,
   InferredLessonContext,
   LessonStructure,
   QualityCheck,
@@ -53,20 +54,42 @@ function cleanString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function cleanStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function sanitizeAlignmentRequest(body: {
   lessonText?: unknown;
+  gradeLevel?: unknown;
   gradeBand?: unknown;
+  elpacLevels?: unknown;
   proficiency?: unknown;
   lessonGoal?: unknown;
   contentArea?: unknown;
+  contentExpectations?: unknown;
+  contentStandardIds?: unknown;
   teacherNote?: unknown;
 }) {
+  const gradeLevel = cleanString(body.gradeLevel);
+  const gradeBand = cleanString(body.gradeBand);
+
   return {
     lessonText: cleanString(body.lessonText),
-    gradeBand: cleanString(body.gradeBand),
+    gradeLevel,
+    gradeBand: gradeLevel || gradeBand,
+    elpacLevels: cleanStringArray(body.elpacLevels),
     proficiency: cleanString(body.proficiency),
     lessonGoal: cleanString(body.lessonGoal),
     contentArea: cleanString(body.contentArea),
+    contentExpectations: cleanString(body.contentExpectations),
+    contentStandardIds: cleanStringArray(body.contentStandardIds),
     teacherNote: cleanString(body.teacherNote)
   };
 }
@@ -81,13 +104,13 @@ export function analyzeLessonStructure(lessonText: string): LessonStructure {
       }
 
       return (
-        /^(objective|objectives|learning target|lesson goal|goal|essential question|unit goal|materials|warm-up|activity|task|exit ticket|assessment|procedure)\b/i.test(
+        /^(objective|objectives|learning target|lesson goal|goal|essential question|materials|warm-up|activity|task|exit ticket|assessment|procedure)\b/i.test(
           line
         ) || /^[A-Z][A-Za-z /-]{2,32}$/.test(line)
       );
     });
   const likelyInsertionIndex = lines.findIndex((line) =>
-    /^(objective|objectives|learning target|lesson goal|goal|essential question|unit goal)\b/i.test(
+    /^(objective|objectives|learning target|lesson goal|goal|essential question)\b/i.test(
       line.trim()
     )
   );
@@ -322,16 +345,105 @@ export function createBriefAlignmentNotes({
   ].filter(Boolean);
 }
 
+function contentGoal(input: { lessonGoal: string; contentArea: string }) {
+  return input.lessonGoal || `${input.contentArea || "content"} lesson goal`;
+}
+
+function createStudentEvidence(context: InferredLessonContext) {
+  if (context.communicationMode === "productive") {
+    return [
+      "Students write a response that uses lesson vocabulary and evidence.",
+      "Students explain how their evidence supports the content idea."
+    ];
+  }
+
+  if (context.communicationMode === "collaborative") {
+    return [
+      "Students discuss the content idea with a partner or group using evidence.",
+      "Students ask, answer, or build on a peer's idea with lesson vocabulary."
+    ];
+  }
+
+  return [
+    "Students identify key ideas or evidence in the lesson material.",
+    "Students explain the content idea using lesson vocabulary."
+  ];
+}
+
+function createAcademicLanguageSupports(context: InferredLessonContext) {
+  const demand = CONTENT_LANGUAGE_DEMANDS[context.contentArea] ?? CONTENT_LANGUAGE_DEMANDS.default;
+
+  return {
+    vocabulary: ["key content vocabulary", "evidence", "explain", "because"],
+    languageFunctions: [context.languageFunction.replaceAll("_", " "), "clarify thinking"],
+    languageFeatures: ["complete sentences", "evidence phrases", "because statements"],
+    sentenceFrames: [
+      "The important idea is ___ because ___.",
+      "My evidence is ___, which shows ___."
+    ],
+    discussionOrWritingStems: [demand.prompt.replace("Student Language Prompt: ", "")],
+    originalModelLanguage: [
+      "The text or task shows ___ because ___. I can add that ___, so my conclusion is ___."
+    ]
+  };
+}
+
+function createElpacSupports(goal: string): ElpacSupport[] {
+  return [
+    {
+      level: "1",
+      proficiencyBand: "Emerging",
+      supports: [
+        "Preview the task with visuals, gestures, and 3-5 essential words before students begin.",
+        "Offer sentence frames and partner rehearsal before independent speaking or writing.",
+        "Let students point, sort, match, draw, or orally rehearse while still working toward the same content goal."
+      ],
+      cognitiveDemandNote: `ELPAC 1 students keep the same expectation: explain ${goal} with supported language.`
+    },
+    {
+      level: "3",
+      proficiencyBand: "Expanding",
+      supports: [
+        "Ask students to extend responses with because, for example, and this shows.",
+        "Prompt students to compare ideas, ask a clarifying question, or build on a peer's evidence.",
+        "Fade sentence frames into word banks or transition-word choices as students gain independence."
+      ],
+      cognitiveDemandNote: `ELPAC 3 students keep the same expectation: explain ${goal} with more precise and connected academic language.`
+    }
+  ];
+}
+
+function createSuccessCriteria(goal: string, context: InferredLessonContext) {
+  return [
+    `I can explain ${goal} using lesson vocabulary.`,
+    "I can use evidence from the text, task, or discussion to support my idea.",
+    `I can ${context.languageDemand}.`
+  ];
+}
+
+function createTeacherFeedbackMoves() {
+  return [
+    "Prompt for evidence: \"What in the text, task, or model makes you think that?\"",
+    "Recast and extend: repeat the student's idea with the academic word or phrase added.",
+    "Press for precision: \"Can you say that again using the word ___?\"",
+    "Invite peer language growth: \"Who can build on that idea with another piece of evidence?\""
+  ];
+}
+
 export function alignLessonWithOrchestrator(input: {
   lessonText: string;
   gradeBand: string;
+  elpacLevels?: string[];
   proficiency: string;
   lessonGoal: string;
   contentArea: string;
+  contentExpectations?: string;
+  contentStandardIds?: string[];
   teacherNote: string;
 }): AlignmentResponse {
   const structure = analyzeLessonStructure(input.lessonText);
   const context = inferLessonContext(input);
+  const goal = contentGoal(input);
   const bundle = retrieveEldBundle({
     gradeSpan: context.gradeSpan,
     proficiency: context.proficiency,
@@ -351,9 +463,20 @@ export function alignLessonWithOrchestrator(input: {
     standardsUsed,
     structure
   });
+  const studentEvidence = createStudentEvidence(context);
 
   return {
     alignedText,
+    lessonLanguageFocus: {
+      contentGoal: goal,
+      languageDemand: context.languageDemand,
+      studentEvidence: studentEvidence.join(" ")
+    },
+    studentEvidence,
+    academicLanguageSupports: createAcademicLanguageSupports(context),
+    elpacSupports: createElpacSupports(goal),
+    studentFriendlySuccessCriteria: createSuccessCriteria(goal, context),
+    teacherFeedbackMoves: createTeacherFeedbackMoves(),
     briefAlignmentNotes: createBriefAlignmentNotes({
       context,
       standardsUsed,

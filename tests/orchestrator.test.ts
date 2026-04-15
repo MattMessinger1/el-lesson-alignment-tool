@@ -8,7 +8,7 @@ import {
   inferLessonContext
 } from "../lib/eld/orchestrator";
 import { SME_RUBRIC } from "../lib/eld/sme-rubric";
-import { retrieveEldBundle } from "../lib/eld/standards";
+import { flattenStandardsUsed, retrieveEldBundle } from "../lib/eld/standards";
 
 test("retrieveEldBundle returns Part I, Part II, and PLD together", () => {
   const bundle = retrieveEldBundle({
@@ -108,6 +108,76 @@ test("quality checks catch report format and student data", () => {
   assert.equal(checks.find((check) => check.id === "no_student_data_detected")?.passed, false);
   assert.equal(checks.find((check) => check.id === "no_five_section_report")?.passed, false);
   assert.equal(checks.find((check) => check.id === "eld_bundle_complete")?.passed, false);
+});
+
+test("quality checks allow useful short-lesson additions without treating them as a rewrite", () => {
+  const originalText = `Objective
+Students will identify the central idea.
+
+Activity
+Students discuss details with a partner.
+
+Exit Ticket
+Students write one supporting detail.`;
+  const structure = analyzeLessonStructure(originalText);
+  const bundle = retrieveEldBundle({
+    gradeSpan: "6-8",
+    proficiency: "mixed",
+    mode: "collaborative",
+    languageFunction: "explain_with_evidence"
+  });
+  const alignedText = `${originalText}
+
+Language Objective
+Students explain the central idea with evidence and build on a partner's idea.
+
+Student Language Supports
+- The central idea is ___ because ___.
+- The detail ___ supports it because ___.
+
+ELPAC 1 Support
+Students use a visual, word bank, and partner rehearsal before sharing the same content idea.
+
+ELPAC 3 Support
+Students extend their explanation with because, for example, and this shows.
+
+Teacher Feedback Move
+Ask: What evidence in the text makes you think that?`;
+
+  const checks = checkAlignmentQuality({
+    originalText,
+    alignedText,
+    standardsUsed: flattenStandardsUsed(bundle),
+    structure
+  });
+
+  assert.equal(checks.find((check) => check.id === "no_full_rewrite")?.passed, true);
+});
+
+test("quality checks still reject oversized outputs that do not preserve the lesson", () => {
+  const originalText = `Objective
+Students will identify the central idea.
+
+Activity
+Students discuss details with a partner.`;
+  const structure = analyzeLessonStructure(originalText);
+  const bundle = retrieveEldBundle({
+    gradeSpan: "6-8",
+    proficiency: "mixed",
+    mode: "collaborative",
+    languageFunction: "explain_with_evidence"
+  });
+  const alignedText = `New Lesson Plan
+${"Students complete a redesigned activity with many unrelated steps. ".repeat(90)}`;
+
+  const checks = checkAlignmentQuality({
+    originalText,
+    alignedText,
+    standardsUsed: flattenStandardsUsed(bundle),
+    structure
+  });
+
+  assert.equal(checks.find((check) => check.id === "no_full_rewrite")?.passed, false);
 });
 
 test("SME rubric and eval set cover required review dimensions", () => {

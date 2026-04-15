@@ -479,45 +479,53 @@ export default function Home() {
               qualityChecks.length ||
               safetyChecks.length ? (
                 <div className="evidenceGrid" aria-label="Alignment evidence">
-                  <section className="evidencePanel">
-                    <h3>Student Evidence</h3>
-                    <ul>
-                      {studentEvidence.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </section>
+                  {studentEvidence.length ? (
+                    <section className="evidencePanel">
+                      <h3>Student Evidence</h3>
+                      <ul>
+                        {studentEvidence.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Success Criteria</h3>
-                    <ul>
-                      {studentFriendlySuccessCriteria.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </section>
+                  {studentFriendlySuccessCriteria.length ? (
+                    <section className="evidencePanel">
+                      <h3>Success Criteria</h3>
+                      <ul>
+                        {studentFriendlySuccessCriteria.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>ELPAC Supports</h3>
-                    <ul>
-                      {elpacSupports.map((support) => (
-                        <li key={support.level}>
-                          <strong>Level {support.level}: {support.proficiencyBand}</strong>
-                          <span>{support.cognitiveDemandNote}</span>
-                          <span>{support.supports.join(" ")}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  {elpacSupports.length ? (
+                    <section className="evidencePanel">
+                      <h3>ELPAC Supports</h3>
+                      <ul>
+                        {elpacSupports.map((support) => (
+                          <li key={support.level}>
+                            <strong>Level {support.level}: {support.proficiencyBand}</strong>
+                            <span>{support.cognitiveDemandNote}</span>
+                            <span>{support.supports.join(" ")}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Teacher Moves</h3>
-                    <ul>
-                      {teacherFeedbackMoves.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </section>
+                  {teacherFeedbackMoves.length ? (
+                    <section className="evidencePanel">
+                      <h3>Teacher Moves</h3>
+                      <ul>
+                        {teacherFeedbackMoves.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
                   {academicLanguageSupports ? (
                     <section className="evidencePanel">
@@ -550,68 +558,78 @@ export default function Home() {
                     </section>
                   ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Brief Notes</h3>
-                    <ul>
-                      {briefAlignmentNotes.map((note) => (
-                        <li key={note}>{note}</li>
-                      ))}
-                    </ul>
-                  </section>
+                  {briefAlignmentNotes.length ? (
+                    <section className="evidencePanel">
+                      <h3>Brief Notes</h3>
+                      <ul>
+                        {briefAlignmentNotes.map((note) => (
+                          <li key={note}>{note}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Change Notes</h3>
-                    <ul>
-                      {changeNotes.map((note) => (
-                        <li key={`${note.anchor}-${note.note}`}>
-                          <strong>{note.changeType.replace("_", " ")}</strong>
-                          <span>{note.note}</span>
-                        </li>
-                      ))}
-                      {alignmentMode ? (
-                        <li>
-                          <strong>Mode</strong>
-                          <span>{alignmentMode === "llm" ? "LLM alignment with traced review" : "Deterministic local alignment"}</span>
-                        </li>
-                      ) : null}
-                    </ul>
-                  </section>
+                  {changeNotes.length || alignmentMode ? (
+                    <section className="evidencePanel">
+                      <h3>Change Notes</h3>
+                      <ul>
+                        {changeNotes.map((note) => (
+                          <li key={`${note.anchor}-${note.note}`}>
+                            <strong>{note.changeType.replace("_", " ")}</strong>
+                            <span>{note.note}</span>
+                          </li>
+                        ))}
+                        {alignmentMode ? (
+                          <li>
+                            <strong>Mode</strong>
+                            <span>{alignmentMode === "llm" ? "LLM alignment with traced review" : "Deterministic local alignment"}</span>
+                          </li>
+                        ) : null}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Standards Used</h3>
-                    <ul>
-                      {standardsUsed.map((standard) => (
-                        <li key={standard.id}>
-                          <strong>{standard.id}</strong>
-                          <span>{standard.teacherFriendlySummary}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  {standardsUsed.length ? (
+                    <section className="evidencePanel">
+                      <h3>Standards Used</h3>
+                      <ul>
+                        {standardsUsed.map((standard) => (
+                          <li key={standard.id}>
+                            <strong>{standard.id}</strong>
+                            <span>{standard.teacherFriendlySummary}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Quality Checks</h3>
-                    <ul>
-                      {qualityChecks.map((check) => (
-                        <li key={check.id}>
-                          <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
-                          <span>{check.detail}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  {qualityChecks.length ? (
+                    <section className="evidencePanel">
+                      <h3>Quality Checks</h3>
+                      <ul>
+                        {qualityChecks.map((check) => (
+                          <li key={check.id}>
+                            <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
+                            <span>{check.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
-                  <section className="evidencePanel">
-                    <h3>Safety Checks</h3>
-                    <ul>
-                      {safetyChecks.map((check) => (
-                        <li key={check.id}>
-                          <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
-                          <span>{check.detail}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  {safetyChecks.length ? (
+                    <section className="evidencePanel">
+                      <h3>Safety Checks</h3>
+                      <ul>
+                        {safetyChecks.map((check) => (
+                          <li key={check.id}>
+                            <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
+                            <span>{check.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
                 </div>
               ) : null}
             </div>

@@ -274,6 +274,38 @@ function containsFiveSectionReport(text: string) {
   );
 }
 
+function normalizeForLineMatch(text: string) {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function preservesEnoughOriginalMaterial(originalText: string, alignedText: string) {
+  const aligned = normalizeForLineMatch(alignedText);
+  const originalLines = originalText
+    .split("\n")
+    .map((line) => normalizeForLineMatch(line))
+    .filter((line) => line.length >= 10);
+
+  if (originalLines.length === 0) {
+    return true;
+  }
+
+  const preservedCount = originalLines.filter((line) => aligned.includes(line)).length;
+
+  return preservedCount / originalLines.length >= 0.45;
+}
+
+function staysWithinTargetedEditBudget(originalLength: number, alignedLength: number) {
+  if (originalLength < 900) {
+    return alignedLength <= originalLength + 3200;
+  }
+
+  if (originalLength < 3000) {
+    return alignedLength <= Math.max(originalLength * 3.5, originalLength + 2600);
+  }
+
+  return alignedLength <= Math.max(originalLength * 2.4, originalLength + 3200);
+}
+
 export function checkAlignmentQuality({
   originalText,
   alignedText,
@@ -301,8 +333,11 @@ export function checkAlignmentQuality({
     {
       id: "no_full_rewrite",
       label: "No full rewrite",
-      passed: alignedLength <= Math.max(originalLength * 2.8, originalLength + 1200),
-      detail: "Aligned output adds targeted ELD support without replacing the whole lesson."
+      passed:
+        preservesEnoughOriginalMaterial(originalText, alignedText) &&
+        staysWithinTargetedEditBudget(originalLength, alignedLength),
+      detail:
+        "Aligned output preserves recognizable original lesson material and stays within the targeted-edit length budget."
     },
     {
       id: "eld_bundle_complete",

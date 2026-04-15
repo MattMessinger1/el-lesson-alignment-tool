@@ -16,6 +16,13 @@ import {
 } from "../../../lib/eld/safety";
 import type { AlignmentRequest } from "../../../lib/eld/types";
 
+function logAlignmentFailure(reason: string, checks?: Array<{ id: string; passed: boolean }>) {
+  console.warn("EL lesson alignment failed safely", {
+    reason,
+    failedChecks: checks?.filter((check) => !check.passed).map((check) => check.id) ?? []
+  });
+}
+
 export async function POST(request: Request) {
   let body: AlignmentRequest;
 
@@ -119,6 +126,8 @@ export async function POST(request: Request) {
     const safetyChecks = [...inputSafety.checks, ...outputSafety];
 
     if (outputSafety.some((check) => !check.passed)) {
+      logAlignmentFailure("deterministic_output_safety", safetyChecks);
+
       return NextResponse.json(
         {
           error: safetyMessageForCode("ALIGNMENT_FAILED"),
@@ -142,6 +151,8 @@ export async function POST(request: Request) {
     }
 
     if (caughtError instanceof AlignmentGenerationError) {
+      logAlignmentFailure(caughtError.message, caughtError.safetyChecks);
+
       return NextResponse.json(
         {
           error: safetyMessageForCode("ALIGNMENT_FAILED"),
@@ -151,6 +162,10 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    logAlignmentFailure(
+      caughtError instanceof Error ? `${caughtError.name}: ${caughtError.message}` : "unknown_error"
+    );
 
     return NextResponse.json(
       { error: safetyMessageForCode("ALIGNMENT_FAILED"), code: "ALIGNMENT_FAILED" },

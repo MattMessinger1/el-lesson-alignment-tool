@@ -28,6 +28,7 @@ The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated ba
 - [Product Requirements Document](docs/PRD.md)
 - [CA ELD Orchestrator](docs/ORCHESTRATOR.md)
 - [Braintrust Tracing](docs/BRAINTRUST_TRACING.md)
+- [Beta Feedback Guide](docs/BETA_FEEDBACK_GUIDE.md)
 - [SME Evaluation Guide](docs/SME_EVAL.md)
 - [Safety and Privacy Guardrails](docs/SAFETY_PRIVACY.md)
 - [Source Attribution and Rights](docs/SOURCE_RIGHTS.md)

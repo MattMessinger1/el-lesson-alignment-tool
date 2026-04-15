@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import {
   MAX_INPUT_CHARACTERS,
   safetyMessageForCode,
@@ -21,6 +21,14 @@ Activity
 
 Exit Ticket
 Write one sentence naming the central idea and one supporting detail.`;
+
+const alignmentStages = [
+  { label: "Checking lesson safety", thresholdMs: 0 },
+  { label: "Matching CA ELD expectations", thresholdMs: 3500 },
+  { label: "Adding academic language supports", thresholdMs: 9000 },
+  { label: "Reviewing quality and privacy", thresholdMs: 26000 },
+  { label: "Finishing the aligned lesson", thresholdMs: 60000 }
+];
 
 type AlignmentResponse = {
   alignedText?: string;
@@ -149,8 +157,11 @@ export default function Home() {
   const [safetyChecks, setSafetyChecks] = useState<SafetyCheck[]>([]);
   const [changeNotes, setChangeNotes] = useState<ChangeNote[]>([]);
   const [alignmentMode, setAlignmentMode] = useState<AlignmentResponse["alignmentMode"]>();
+  const [traceId, setTraceId] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStartedAt, setLoadingStartedAt] = useState<number | null>(null);
+  const [progressElapsedMs, setProgressElapsedMs] = useState(0);
   const [copyLabel, setCopyLabel] = useState("Copy");
 
   const canAlign = useMemo(
@@ -162,13 +173,32 @@ export default function Home() {
     [contentArea, gradeBand, isLoading, lessonText]
   );
   const allSafetyChecksPass = safetyChecks.length === 0 || safetyChecks.every((check) => check.passed);
+  const progressPercent = Math.min(94, Math.round((1 - Math.exp(-progressElapsedMs / 18000)) * 100));
+  const progressStage =
+    alignmentStages.findLast((stage) => progressElapsedMs >= stage.thresholdMs) ?? alignmentStages[0];
+
+  useEffect(() => {
+    if (!isLoading || !loadingStartedAt) {
+      return;
+    }
+
+    setProgressElapsedMs(Date.now() - loadingStartedAt);
+    const interval = window.setInterval(() => {
+      setProgressElapsedMs(Date.now() - loadingStartedAt);
+    }, 500);
+
+    return () => window.clearInterval(interval);
+  }, [isLoading, loadingStartedAt]);
 
   async function handleAlign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsLoading(true);
+    setLoadingStartedAt(Date.now());
+    setProgressElapsedMs(0);
     setCopyLabel("Copy");
     setSafetyChecks([]);
+    setTraceId("");
 
     if (lessonText.length > MAX_INPUT_CHARACTERS) {
       setError(safetyMessageForCode("INPUT_TOO_LARGE"));
@@ -224,10 +254,12 @@ export default function Home() {
       setSafetyChecks(data.safetyChecks ?? []);
       setChangeNotes(data.changeNotes ?? []);
       setAlignmentMode(data.alignmentMode);
+      setTraceId(data.traceId ?? "");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Alignment failed.");
     } finally {
       setIsLoading(false);
+      setLoadingStartedAt(null);
     }
   }
 
@@ -279,7 +311,10 @@ export default function Home() {
     setSafetyChecks([]);
     setChangeNotes([]);
     setAlignmentMode(undefined);
+    setTraceId("");
     setError("");
+    setLoadingStartedAt(null);
+    setProgressElapsedMs(0);
     setCopyLabel("Copy");
   }
 
@@ -400,6 +435,25 @@ export default function Home() {
               </div>
 
               {error ? <div className="error">{error}</div> : null}
+
+              {isLoading ? (
+                <div className="progressPanel" aria-live="polite">
+                  <div className="progressMeta">
+                    <span>{progressStage.label}</span>
+                    <span>{progressPercent}%</span>
+                  </div>
+                  <div
+                    className="progressTrack"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progressPercent}
+                    aria-label="Alignment progress"
+                  >
+                    <div className="progressFill" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+              ) : null}
 
               <div className="actions">
                 <button className="primaryButton" type="submit" disabled={!canAlign}>
@@ -569,7 +623,7 @@ export default function Home() {
                     </section>
                   ) : null}
 
-                  {changeNotes.length || alignmentMode ? (
+                  {changeNotes.length || alignmentMode || traceId ? (
                     <section className="evidencePanel">
                       <h3>Change Notes</h3>
                       <ul>
@@ -583,6 +637,12 @@ export default function Home() {
                           <li>
                             <strong>Mode</strong>
                             <span>{alignmentMode === "llm" ? "LLM alignment with traced review" : "Deterministic local alignment"}</span>
+                          </li>
+                        ) : null}
+                        {traceId ? (
+                          <li>
+                            <strong>Run ID</strong>
+                            <span>{traceId}</span>
                           </li>
                         ) : null}
                       </ul>

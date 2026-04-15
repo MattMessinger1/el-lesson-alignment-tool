@@ -374,6 +374,38 @@ select {
   padding: 12px 14px;
 }
 
+.progressPanel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #bed7d3;
+  border-radius: 8px;
+  background: #f1faf8;
+  padding: 12px 14px;
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #21483f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.progressTrack {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d8ebe7;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--teal));
+  transition: width 480ms ease;
+}
+
 .noteStrip {
   display: flex;
   gap: 10px;

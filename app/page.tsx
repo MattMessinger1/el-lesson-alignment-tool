@@ -500,6 +500,12 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            {traceId ? (
+              <div className="runInfo" aria-live="polite">
+                <span>Run ID</span>
+                <code>{traceId}</code>
+              </div>
+            ) : null}
             <div className="outputBody">
               <div className={alignedText ? "outputBox" : "outputBox placeholder"}>
                 {alignedText ||

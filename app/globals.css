@@ -294,6 +294,29 @@ select {
   gap: 8px;
 }
 
+.runInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  border: 1px solid #bed7d3;
+  border-radius: 8px;
+  background: #f1faf8;
+  color: #21483f;
+  font-size: 13px;
+}
+
+.runInfo span {
+  font-weight: 760;
+}
+
+.runInfo code {
+  overflow-wrap: anywhere;
+  font-family: var(--font-geist-mono), monospace;
+}
+
 .outputBody {
   padding: 18px;
 }

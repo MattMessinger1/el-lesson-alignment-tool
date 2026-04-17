@@ -13,6 +13,12 @@ Blocked categories include:
 
 The product blocks rather than redacts for v0.5. The teacher must remove private student details and retry.
 
+## Browser-Only File Parsing
+
+The beta supports `.txt`, `.md`, `.csv`, `.docx`, and selectable-text `.pdf` lesson uploads. Files are parsed in the browser so raw uploaded files do not go to Vercel. The app places extracted text into the lesson input, and the existing PII and prompt-injection checks run before standards retrieval, OpenAI calls, or Braintrust tracing.
+
+Scanned PDFs, image-only PDFs, OCR, encrypted PDFs, oversized files, unreadable files, and legacy `.doc` files are intentionally not supported in the beta. These failures should return teacher-safe messages and should not call `/api/align`.
+
 ## Prompt-Injection Blocking
 
 Lesson text, uploads, teacher notes, and standards summaries are treated as untrusted data. The app blocks high-confidence prompt-injection patterns before alignment, including:

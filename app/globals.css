@@ -397,6 +397,14 @@ select {
   padding: 12px 14px;
 }
 
+.fileStatus {
+  color: #21483f;
+  background: #f1faf8;
+  border: 1px solid #bed7d3;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
 .progressPanel {
   display: grid;
   gap: 8px;

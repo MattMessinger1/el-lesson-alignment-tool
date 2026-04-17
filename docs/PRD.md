@@ -86,7 +86,7 @@ Human review is required before outputs are used in instruction. The tool suppor
 The launch workflow should be one screen and one main action.
 
 1. Teacher opens the app.
-2. Teacher pastes a lesson or uploads a text-like lesson file.
+2. Teacher pastes a lesson or uploads a `.txt`, `.md`, `.csv`, `.docx`, or selectable-text `.pdf` lesson file.
 3. Teacher chooses grade and content area.
 4. ELPAC focus defaults to levels 1 and 3.
 5. Teacher optionally adds a lesson goal, content expectations, or short note.
@@ -97,7 +97,7 @@ The launch workflow should be one screen and one main action.
 
 ### Required Inputs
 
-- `lessonText`: pasted lesson text or a text-like upload.
+- `lessonText`: pasted lesson text or extracted text from a browser-parsed upload.
 - `gradeLevel` or `gradeBand`: grade context for CA ELD retrieval.
 - `contentArea`: content teacher context such as ELA, math, science, or history/social science.
 
@@ -166,6 +166,10 @@ These sections support teacher trust and usability, but the aligned lesson remai
 ### Format Fidelity
 
 Exact formatting may not always be possible across paste, upload, and copy. When exact formatting cannot be preserved, the app should use the closest practical equivalent, such as Markdown headings, bullets, numbering, or tables.
+
+### Upload Parsing
+
+The beta supports browser-only parsing for `.txt`, `.md`, `.csv`, `.docx`, and selectable-text `.pdf` lesson files. Raw files must not be uploaded to Vercel. The app extracts text in the browser, places that text into the lesson input, and then uses the existing safety-gated alignment flow. Scanned PDFs, OCR, image-only PDFs, and legacy `.doc` files are deferred.
 
 ## 7. Product Behavior Requirements
 
@@ -292,7 +296,7 @@ Official standard text should be stored separately from app-created summaries. A
 The MVP should include:
 
 - Single-screen lesson input.
-- Paste or text-like upload input.
+- Paste input plus browser-parsed `.txt`, `.md`, `.csv`, `.docx`, and selectable-text `.pdf` uploads.
 - Grade selection.
 - Required content area.
 - ELPAC 1 and 3 focus.
@@ -321,6 +325,8 @@ The following items are intentionally out of scope for MVP:
 - Mentor text library or corpus workflow.
 - Compare original versus revised.
 - Download revised file.
+- OCR or scanned PDF parsing.
+- Legacy `.doc` upload support.
 - Saved searches.
 - Reuse old output for a new lesson.
 - Text-level customization controls.
@@ -379,6 +385,14 @@ Given a teacher uploads or pastes instructional material, when they complete an 
 
 Given a user pastes likely student-identifiable data, when they submit the lesson, then the app blocks alignment before retrieval or generation and does not echo the detected raw values back to the user.
 
+### Scenario 12: Word and Text-PDF Uploads Stay Browser-Only
+
+Given a teacher uploads a `.docx` or selectable-text `.pdf`, when the app reads the file, then the raw file stays in the browser, extracted text appears in the lesson input, and only extracted text is sent to `/api/align` after the teacher starts alignment.
+
+### Scenario 13: Unsupported Uploads Fail Clearly
+
+Given a teacher uploads a scanned PDF, image-only PDF, old `.doc`, oversized file, encrypted PDF, or unsupported file type, when the app reads the file, then it shows a clear teacher-safe message and does not call `/api/align`.
+
 ## 15. Implementation Notes for Future Build
 
 - Treat this PRD as the product source of truth until a later implementation spec exists.
@@ -391,7 +405,6 @@ Given a user pastes likely student-identifiable data, when they submit the lesso
 
 ## 16. Open Questions for Later Discovery
 
-- What upload file types should be allowed beyond `.txt`, `.md`, and `.csv`?
 - How should the app represent CA content standards if optional matching is added?
 - What exact retention policy should be used for explicitly saved items?
 - Who approves district-facing guidance before pilot launch?

@@ -6,6 +6,11 @@ import {
   safetyMessageForCode,
   scanInputSafety
 } from "../lib/eld/safety";
+import {
+  DocumentUploadError,
+  documentUploadMessageForCode,
+  extractTextFromLessonFile
+} from "../lib/eld/document-upload";
 import type { AlignmentErrorCode, ChangeNote, SafetyCheck } from "../lib/eld/types";
 
 const sampleLesson = `Objective
@@ -160,6 +165,8 @@ export default function Home() {
   const [traceId, setTraceId] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [fileStatus, setFileStatus] = useState("");
   const [loadingStartedAt, setLoadingStartedAt] = useState<number | null>(null);
   const [progressElapsedMs, setProgressElapsedMs] = useState(0);
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -169,8 +176,9 @@ export default function Home() {
       lessonText.trim().length >= 20 &&
       gradeBand.trim().length > 0 &&
       contentArea.trim().length > 0 &&
+      !isParsingFile &&
       !isLoading,
-    [contentArea, gradeBand, isLoading, lessonText]
+    [contentArea, gradeBand, isLoading, isParsingFile, lessonText]
   );
   const allSafetyChecksPass = safetyChecks.length === 0 || safetyChecks.every((check) => check.passed);
   const progressPercent = Math.min(94, Math.round((1 - Math.exp(-progressElapsedMs / 18000)) * 100));
@@ -193,6 +201,7 @@ export default function Home() {
   async function handleAlign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setFileStatus("");
     setIsLoading(true);
     setLoadingStartedAt(Date.now());
     setProgressElapsedMs(0);
@@ -280,17 +289,30 @@ export default function Home() {
       return;
     }
 
-    const allowedExtensions = /\.(txt|md|csv)$/i;
-
-    if (!allowedExtensions.test(file.name)) {
-      setError(safetyMessageForCode("UNSUPPORTED_FILE_TEXT"));
+    if (isLoading) {
       event.target.value = "";
       return;
     }
 
-    const text = await file.text();
-    setLessonText(text);
     setError("");
+    setFileStatus("Reading lesson file...");
+    setIsParsingFile(true);
+
+    try {
+      const text = await extractTextFromLessonFile(file);
+      setLessonText(text);
+      setFileStatus("Lesson text extracted. Review it before aligning.");
+    } catch (caughtError) {
+      setFileStatus("");
+      setError(
+        caughtError instanceof DocumentUploadError
+          ? documentUploadMessageForCode(caughtError.code)
+          : documentUploadMessageForCode("unreadable_file")
+      );
+    } finally {
+      setIsParsingFile(false);
+      event.target.value = "";
+    }
   }
 
   function handleReset() {
@@ -313,6 +335,8 @@ export default function Home() {
     setAlignmentMode(undefined);
     setTraceId("");
     setError("");
+    setFileStatus("");
+    setIsParsingFile(false);
     setLoadingStartedAt(null);
     setProgressElapsedMs(0);
     setCopyLabel("Copy");
@@ -343,13 +367,13 @@ export default function Home() {
                 <label htmlFor="lessonText">Lesson</label>
                 <label className="fileButton" htmlFor="lessonFile">
                   <UploadIcon />
-                  Upload text file
+                  {isParsingFile ? "Reading file" : "Upload lesson file"}
                 </label>
                 <input
                   className="fileInput"
                   id="lessonFile"
                   type="file"
-                  accept=".txt,.md,.csv,text/plain,text/markdown,text/csv"
+                  accept=".txt,.md,.csv,.docx,.pdf,text/plain,text/markdown,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
                   onChange={handleFile}
                 />
                 <textarea
@@ -435,6 +459,7 @@ export default function Home() {
               </div>
 
               {error ? <div className="error">{error}</div> : null}
+              {fileStatus ? <div className="fileStatus">{fileStatus}</div> : null}
 
               {isLoading ? (
                 <div className="progressPanel" aria-live="polite">

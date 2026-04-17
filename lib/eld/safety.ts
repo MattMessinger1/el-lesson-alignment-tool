@@ -317,7 +317,7 @@ export function safetyMessageForCode(code: AlignmentErrorCode) {
   }
 
   if (code === "UNSUPPORTED_FILE_TEXT") {
-    return "Use a .txt, .md, or .csv file for this beta. PDF, DOCX, and OCR uploads are not enabled yet.";
+    return "Use a .txt, .md, .csv, .docx, or selectable-text .pdf file for this beta.";
   }
 
   if (code === "MODEL_CONFIG_MISSING") {

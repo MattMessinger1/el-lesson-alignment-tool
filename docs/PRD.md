@@ -16,7 +16,7 @@ The teacher-facing promise is:
 
 > Paste my lesson. Choose grade and content area. Give me the same lesson back with useful academic language supports built in.
 
-The MVP prioritizes teacher simplicity. The aligned lesson appears first. Brief notes and supporting cards appear after the lesson so teachers can understand why the additions help English learners, but those notes are secondary.
+The MVP prioritizes teacher simplicity. The primary polished deliverable is a generated **Teacher Visual Packet** made from the checked alignment response. The aligned lesson text remains available for copy, editing, accessibility, and review.
 
 ## 2. Problem Statement
 
@@ -46,6 +46,7 @@ The pain is not that teachers need a new template. The pain is that they need th
 - Provide ELPAC level 1 and level 3 supports that keep the same content expectation and cognitive demand.
 - Provide student-friendly success criteria that combine content and language expectations.
 - Provide specific teacher feedback moves for language growth.
+- Generate a readable 1-2 page visual packet from the checked alignment output.
 - Keep CA ELD Part I, Part II, and PLD context together whenever ELD standards are named or summarized.
 - Block likely student-identifiable data and prompt-injection attempts before retrieval or model generation.
 - Attribute CDE/SBE standards sources without implying affiliation, sponsorship, approval, or endorsement.
@@ -92,8 +93,10 @@ The launch workflow should be one screen and one main action.
 5. Teacher optionally adds a lesson goal, content expectations, or short note.
 6. Teacher clicks **Align Lesson**.
 7. App returns the lesson in the same format with academic language supports added.
-8. Teacher reviews and copies the aligned lesson.
-9. Any saving must be explicit if save functionality exists.
+8. App generates a teacher visual packet from the checked alignment response.
+9. Teacher reviews the visual packet, aligned lesson, and rationale.
+10. Teacher copies the aligned lesson or downloads visual packet pages.
+11. Any saving must be explicit if save functionality exists.
 
 ### Required Inputs
 
@@ -148,6 +151,15 @@ The app must not:
 - Add generic supports that do not connect to the actual lesson task.
 - Create a separate five-section report as the main result.
 - Lower cognitive demand for students at earlier English proficiency levels.
+
+### Primary Presentation Output: Teacher Visual Packet
+
+After alignment passes safety and quality checks, the app generates 1-2 readable image pages from a compact packet spec. The packet should show:
+
+- Page 1: language demand, student evidence, and CA ELD Part I + Part II + PLD rationale.
+- Page 2: ELPAC 1/3 supports, sentence frames, success criteria, and teacher feedback moves.
+
+Image generation must not invent standards or instructional claims. It may only visualize supplied, checked alignment content. The generated packet is a planning aid; the aligned text remains the canonical copy/edit source.
 
 ### Secondary Output: Teacher Support Cards
 
@@ -241,6 +253,8 @@ Successful responses include:
 - `briefAlignmentNotes`: short CA ELD rationale.
 - `standardsUsed`: retrieved CA ELD records and optional content standards in future expansion.
 - `qualityChecks`, `safetyChecks`, `changeNotes`, `traceId`, and `alignmentMode`.
+
+`POST /api/visual-packet` accepts a successful checked alignment response plus grade/content context and returns generated packet images when image generation is enabled. It must not receive raw uploaded files.
 
 Stable error codes:
 

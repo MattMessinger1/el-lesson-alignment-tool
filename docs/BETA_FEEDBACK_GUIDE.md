@@ -11,6 +11,7 @@ For each tested lesson, collect:
 - Whether the submitted lesson was prose, bullets, numbered steps, or table-like.
 - The original lesson, with no student-identifiable information.
 - The aligned output.
+- The visual packet images, if generated.
 - Notes using the review questions below.
 
 ## Fast Review Rubric
@@ -34,6 +35,7 @@ Score each area from 1 to 4.
 | Feedback moves | Are teacher prompts specific enough to support language growth during the lesson? |
 | Overreach | Did the tool rewrite too much, add generic filler, or change the lesson's intent? |
 | Safety | Did the tool avoid asking for or exposing student-identifiable information? |
+| Visual packet | Is the generated packet readable, useful within two minutes, and faithful to the checked alignment? |
 
 ## Best Feedback Format
 
@@ -52,6 +54,8 @@ Where the tool changed too much or too little:
 Missing language supports or scaffolds:
 
 Suggested better output language:
+
+Did the visual packet help within 2 minutes?
 
 Would a content teacher use this? Why or why not?
 ```

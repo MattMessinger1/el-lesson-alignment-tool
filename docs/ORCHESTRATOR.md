@@ -21,6 +21,7 @@ When `ELD_USE_LLM=true`, `/api/align` routes the generation step through the Ope
 9. Validate that the model did not invent standards or return a report instead of the aligned lesson.
 10. Run quality and output safety checks before returning a response.
 11. Return structured API output: aligned lesson, brief notes, standards used, change notes, quality checks, safety checks, alignment mode, and trace ID when available.
+12. When enabled, `/api/visual-packet` builds a compact packet spec from the checked response and sends only that spec to image generation.
 
 ## LLM Contract
 
@@ -49,6 +50,16 @@ The implementation exports the system prompt and tool definitions in `lib/eld/ll
 - `check_output_safety`: checks schema validity, standards allowlist, format, rewrite scope, and output DLP.
 
 Live model tool-calling is deferred until SME evals show the prompt-only LLM path is stable.
+
+## Visual Packet Generation
+
+The visual packet pipeline is separate from standards-grounded alignment. It must only run after a successful alignment response has passed safety, schema, standards allowlist, and quality checks.
+
+- Input: checked `AlignmentResponse`, grade band, content area, and optional lesson goal.
+- Not input: raw uploaded files, full original lesson text, hidden prompts, or CDE branding assets.
+- Output: 1-2 image pages plus prompt version, model, status, and trace ID.
+- Failure mode: image generation can fail without invalidating the aligned lesson.
+- Prompt posture: clean teacher handout, high contrast, large readable text, short bullets, no fake logos/seals/signatures, no invented standards, and Part I + Part II + PLD shown together.
 
 ## API Response
 

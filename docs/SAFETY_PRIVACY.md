@@ -51,3 +51,9 @@ If output checks fail, the API fails safely with `ALIGNMENT_FAILED`.
 The app does not persist uploaded files, pasted lesson text, generated output, or chat history by default. Application logs should not include full lesson bodies or model responses.
 
 For internal beta evals, the LLM path sends safe, post-gate alignment requests to OpenAI and records full Braintrust traces for review. Input blocked for PII or prompt injection returns before standards retrieval, model calls, or Braintrust trace creation. Teachers should still avoid pasting student-identifiable data because the correct v0.5 behavior is to block and discard, not redact.
+
+## Visual Packet Safety
+
+When image generation is enabled, the app sends a compact visual packet spec to OpenAI after the alignment response has passed safety, schema, standards allowlist, and quality checks. The spec should include only teacher-facing alignment summaries, standards rationale, ELPAC supports, frames, success criteria, feedback moves, and run metadata. It should not include raw uploaded files or unnecessary full lesson text.
+
+Generated packet prompts must not request CDE logos, seals, school branding, signatures, endorsements, or invented standards. If image generation fails, the checked aligned lesson remains available and the visual packet error is non-blocking.

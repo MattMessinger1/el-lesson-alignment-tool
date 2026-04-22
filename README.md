@@ -10,6 +10,7 @@ The product should feel straightforward for teachers:
 4. Get the same lesson back with useful academic language supports built in.
 
 The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated backend, curated CA ELD records, and an LLM alignment step using OpenAI with Braintrust tracing.
+The next beta slice makes the polished teacher-facing deliverable a generated **Teacher Visual Packet**: 1-2 readable image pages created from the checked alignment response.
 
 ## Current Scope
 
@@ -24,6 +25,8 @@ The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated ba
 - Avoid automatic retention of uploads, lesson text, outputs, or chat history.
 - Attribute CDE/SBE standards sources without implying CDE affiliation, sponsorship, or endorsement.
 - Trace the LLM alignment pipeline in Braintrust for internal evals after input safety checks pass.
+- Generate teacher-readable visual packet pages from the checked alignment JSON when `ELD_USE_IMAGEGEN=true`.
+- Keep aligned text as the accessibility/copy source of truth when image generation is unavailable or fails.
 
 ## Documents
 
@@ -31,6 +34,7 @@ The current milestone is a v0.5 free beta: a Next.js frontend, a safety-gated ba
 - [CA ELD Orchestrator](docs/ORCHESTRATOR.md)
 - [Braintrust Tracing](docs/BRAINTRUST_TRACING.md)
 - [Beta Feedback Guide](docs/BETA_FEEDBACK_GUIDE.md)
+- [Teacher and Coach Runbook](docs/TEACHER_RUNBOOK.md)
 - [SME Evaluation Guide](docs/SME_EVAL.md)
 - [Safety and Privacy Guardrails](docs/SAFETY_PRIVACY.md)
 - [Source Attribution and Rights](docs/SOURCE_RIGHTS.md)
@@ -46,9 +50,11 @@ npm run build
 npm run import:cde-eld
 ```
 
-Copy `.env.example` to `.env.local` for local LLM testing and provide real `OPENAI_API_KEY` and `BRAINTRUST_API_KEY` values. Do not commit `.env.local`.
+Copy `.env.example` to `.env.local` for local LLM/image testing and provide real `OPENAI_API_KEY` and `BRAINTRUST_API_KEY` values. Do not commit `.env.local`.
 
-The v0.5 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with student evidence, academic language supports, ELPAC 1/3 supports, student-friendly success criteria, teacher feedback moves, brief notes, standards used, change notes, quality checks, safety checks, `alignmentMode`, and a Braintrust `traceId` when tracing is active. File parsing is browser-only; the API receives extracted lesson text, not raw uploaded files.
+Image generation is controlled by `ELD_USE_IMAGEGEN`, `ELD_IMAGE_MODEL`, and `ELD_IMAGE_QUALITY`. The beta defaults to OpenAI's GPT Image 2 API model ID, `gpt-image-2`; use a dated snapshot such as `gpt-image-2-2026-04-21` only when you intentionally want to pin behavior.
+
+The v0.5 app includes a teacher-facing Next.js frontend and a backend `/api/align` route that returns same-format CA ELD-aligned lesson output with student evidence, academic language supports, ELPAC 1/3 supports, student-friendly success criteria, teacher feedback moves, brief notes, standards used, change notes, quality checks, safety checks, `alignmentMode`, and a Braintrust `traceId` when tracing is active. `/api/visual-packet` turns that checked response into image pages; it does not receive raw uploaded files. File parsing is browser-only; the alignment API receives extracted lesson text, not raw uploaded files.
 
 ## Source Inputs
 

@@ -33,6 +33,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
+    "tests",
+    "wceps-branding-tool",
     "node_modules",
     ".next/types/validator.ts",
     ".next/dev/types/validator.ts"

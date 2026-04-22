@@ -162,3 +162,38 @@ export type AlignmentResponse = {
   traceId?: string;
   alignmentMode: AlignmentMode;
 };
+
+export type VisualPacketSpec = {
+  title: string;
+  gradeBand: string;
+  contentArea: string;
+  languageDemand: string;
+  studentEvidence: string[];
+  eldRationale: Array<{
+    part: EldPart;
+    standardIds: string[];
+    summary: string;
+  }>;
+  elpacSupports: ElpacSupport[];
+  sentenceFrames: string[];
+  successCriteria: string[];
+  teacherFeedbackMoves: string[];
+  runId?: string;
+};
+
+export type VisualPacketImage = {
+  pageNumber: number;
+  altText: string;
+  b64Json: string;
+};
+
+export type VisualPacketStatus = "disabled" | "ready" | "failed";
+
+export type VisualPacketResponse = {
+  visualPacketImages: VisualPacketImage[];
+  visualPacketPromptVersion: string;
+  visualPacketStatus: VisualPacketStatus;
+  model: string;
+  traceId?: string;
+  error?: string;
+};

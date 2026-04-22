@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import {
   MAX_INPUT_CHARACTERS,
   safetyMessageForCode,
@@ -11,7 +11,13 @@ import {
   documentUploadMessageForCode,
   extractTextFromLessonFile
 } from "../lib/eld/document-upload";
-import type { AlignmentErrorCode, ChangeNote, SafetyCheck } from "../lib/eld/types";
+import type {
+  AlignmentErrorCode,
+  AlignmentResponse,
+  SafetyCheck,
+  VisualPacketImage,
+  VisualPacketResponse
+} from "../lib/eld/types";
 
 const sampleLesson = `Objective
 Students will identify the central idea of an informational text and explain how details support it.
@@ -28,61 +34,31 @@ Exit Ticket
 Write one sentence naming the central idea and one supporting detail.`;
 
 const alignmentStages = [
-  { label: "Checking lesson safety", thresholdMs: 0 },
-  { label: "Matching CA ELD expectations", thresholdMs: 3500 },
-  { label: "Adding academic language supports", thresholdMs: 9000 },
-  { label: "Reviewing quality and privacy", thresholdMs: 26000 },
-  { label: "Finishing the aligned lesson", thresholdMs: 60000 }
+  { label: "Analyzing lesson", thresholdMs: 0 },
+  { label: "Aligning to CA ELD", thresholdMs: 3500 },
+  { label: "Checking output", thresholdMs: 12000 },
+  { label: "Designing teacher packet", thresholdMs: 18000 }
 ];
 
-type AlignmentResponse = {
-  alignedText?: string;
-  lessonLanguageFocus?: {
-    contentGoal: string;
-    languageDemand: string;
-    studentEvidence: string;
-  };
-  studentEvidence?: string[];
-  academicLanguageSupports?: {
-    vocabulary: string[];
-    languageFunctions: string[];
-    languageFeatures: string[];
-    sentenceFrames: string[];
-    discussionOrWritingStems: string[];
-    originalModelLanguage: string[];
-  };
-  elpacSupports?: Array<{
-    level: "1" | "3";
-    proficiencyBand: "Emerging" | "Expanding";
-    supports: string[];
-    cognitiveDemandNote: string;
-  }>;
-  studentFriendlySuccessCriteria?: string[];
-  teacherFeedbackMoves?: string[];
-  briefAlignmentNotes?: string[];
-  standardsUsed?: Array<{
-    id: string;
-    part: string;
-    teacherFriendlySummary: string;
-  }>;
-  qualityChecks?: Array<{
-    id: string;
-    label: string;
-    passed: boolean;
-    detail: string;
-  }>;
-  safetyChecks?: SafetyCheck[];
-  changeNotes?: ChangeNote[];
-  traceId?: string;
-  alignmentMode?: "deterministic" | "llm";
+type AlignmentApiResponse = Partial<AlignmentResponse> & {
   error?: string;
   code?: AlignmentErrorCode;
   categories?: string[];
 };
 
-function WandIcon() {
+type ResultTab = "visual" | "lesson" | "rationale";
+
+function SvgIcon({ children }: { children: ReactNode }) {
   return (
     <svg className="buttonIcon" viewBox="0 0 24 24" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+function WandIcon() {
+  return (
+    <SvgIcon>
       <path
         d="M14.5 4.5 19.5 9.5M3.8 20.2 17.9 6.1a1.8 1.8 0 0 1 2.5 2.5L6.3 22.7H3.8v-2.5ZM5 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Zm13 10 1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z"
         fill="none"
@@ -91,13 +67,13 @@ function WandIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-    </svg>
+    </SvgIcon>
   );
 }
 
 function CopyIcon() {
   return (
-    <svg className="buttonIcon" viewBox="0 0 24 24" aria-hidden="true">
+    <SvgIcon>
       <path
         d="M8 8h10v12H8zM6 16H4V4h12v2"
         fill="none"
@@ -106,13 +82,28 @@ function CopyIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-    </svg>
+    </SvgIcon>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <SvgIcon>
+      <path
+        d="M12 4v10m0 0 4-4m-4 4-4-4M5 18v2h14v-2"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </SvgIcon>
   );
 }
 
 function ResetIcon() {
   return (
-    <svg className="buttonIcon" viewBox="0 0 24 24" aria-hidden="true">
+    <SvgIcon>
       <path
         d="M4 12a8 8 0 1 0 2.34-5.66L4 8.68M4 4v4.68h4.68"
         fill="none"
@@ -121,13 +112,13 @@ function ResetIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-    </svg>
+    </SvgIcon>
   );
 }
 
 function UploadIcon() {
   return (
-    <svg className="buttonIcon" viewBox="0 0 24 24" aria-hidden="true">
+    <SvgIcon>
       <path
         d="M12 16V4m0 0 4 4m-4-4L8 8M5 16v3h14v-3"
         fill="none"
@@ -136,8 +127,22 @@ function UploadIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-    </svg>
+    </SvgIcon>
   );
+}
+
+function imageSrc(image: VisualPacketImage) {
+  return `data:image/png;base64,${image.b64Json}`;
+}
+
+function downloadImage(image: VisualPacketImage, title: string) {
+  const link = document.createElement("a");
+  const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  link.href = imageSrc(image);
+  link.download = `${safeTitle || "el-lesson-alignment"}-visual-page-${image.pageNumber}.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export default function Home() {
@@ -149,27 +154,22 @@ export default function Home() {
   const [contentArea, setContentArea] = useState("ELA");
   const [contentExpectations, setContentExpectations] = useState("");
   const [teacherNote, setTeacherNote] = useState("");
-  const [alignedText, setAlignedText] = useState("");
-  const [lessonLanguageFocus, setLessonLanguageFocus] = useState<AlignmentResponse["lessonLanguageFocus"]>();
-  const [studentEvidence, setStudentEvidence] = useState<string[]>([]);
-  const [academicLanguageSupports, setAcademicLanguageSupports] = useState<AlignmentResponse["academicLanguageSupports"]>();
-  const [elpacSupports, setElpacSupports] = useState<NonNullable<AlignmentResponse["elpacSupports"]>>([]);
-  const [studentFriendlySuccessCriteria, setStudentFriendlySuccessCriteria] = useState<string[]>([]);
-  const [teacherFeedbackMoves, setTeacherFeedbackMoves] = useState<string[]>([]);
-  const [briefAlignmentNotes, setBriefAlignmentNotes] = useState<string[]>([]);
-  const [standardsUsed, setStandardsUsed] = useState<NonNullable<AlignmentResponse["standardsUsed"]>>([]);
-  const [qualityChecks, setQualityChecks] = useState<NonNullable<AlignmentResponse["qualityChecks"]>>([]);
+  const [alignment, setAlignment] = useState<AlignmentResponse | null>(null);
+  const [visualPacketImages, setVisualPacketImages] = useState<VisualPacketImage[]>([]);
+  const [visualPacketStatus, setVisualPacketStatus] = useState<VisualPacketResponse["visualPacketStatus"] | "idle">("idle");
+  const [visualPacketError, setVisualPacketError] = useState("");
+  const [visualPacketModel, setVisualPacketModel] = useState("");
+  const [activeTab, setActiveTab] = useState<ResultTab>("visual");
   const [safetyChecks, setSafetyChecks] = useState<SafetyCheck[]>([]);
-  const [changeNotes, setChangeNotes] = useState<ChangeNote[]>([]);
-  const [alignmentMode, setAlignmentMode] = useState<AlignmentResponse["alignmentMode"]>();
-  const [traceId, setTraceId] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingPacket, setIsGeneratingPacket] = useState(false);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [fileStatus, setFileStatus] = useState("");
   const [loadingStartedAt, setLoadingStartedAt] = useState<number | null>(null);
   const [progressElapsedMs, setProgressElapsedMs] = useState(0);
-  const [copyLabel, setCopyLabel] = useState("Copy");
+  const [copyLabel, setCopyLabel] = useState("Copy lesson");
+  const [runIdLabel, setRunIdLabel] = useState("Copy Run ID");
 
   const canAlign = useMemo(
     () =>
@@ -181,9 +181,11 @@ export default function Home() {
     [contentArea, gradeBand, isLoading, isParsingFile, lessonText]
   );
   const allSafetyChecksPass = safetyChecks.length === 0 || safetyChecks.every((check) => check.passed);
-  const progressPercent = Math.min(94, Math.round((1 - Math.exp(-progressElapsedMs / 18000)) * 100));
+  const progressPercent = Math.min(96, Math.round((1 - Math.exp(-progressElapsedMs / 15000)) * 100));
   const progressStage =
     alignmentStages.findLast((stage) => progressElapsedMs >= stage.thresholdMs) ?? alignmentStages[0];
+  const traceId = alignment?.traceId ?? "";
+  const packetTitle = alignment?.lessonLanguageFocus.contentGoal || lessonGoal || "CA ELD Lesson Alignment";
 
   useEffect(() => {
     if (!isLoading || !loadingStartedAt) {
@@ -198,6 +200,45 @@ export default function Home() {
     return () => window.clearInterval(interval);
   }, [isLoading, loadingStartedAt]);
 
+  async function requestVisualPacket(nextAlignment: AlignmentResponse) {
+    setIsGeneratingPacket(true);
+    setVisualPacketStatus("idle");
+    setVisualPacketError("");
+    setVisualPacketImages([]);
+
+    try {
+      const response = await fetch("/api/visual-packet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          alignment: nextAlignment,
+          gradeBand,
+          contentArea,
+          lessonGoal
+        })
+      });
+      const data = (await response.json()) as VisualPacketResponse;
+
+      setVisualPacketStatus(data.visualPacketStatus);
+      setVisualPacketImages(data.visualPacketImages ?? []);
+      setVisualPacketModel(data.model);
+      if (!response.ok || data.visualPacketStatus === "failed") {
+        setVisualPacketError(data.error || "Visual packet generation failed. The aligned lesson is still ready.");
+      }
+    } catch (caughtError) {
+      setVisualPacketStatus("failed");
+      setVisualPacketError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Visual packet generation failed. The aligned lesson is still ready."
+      );
+    } finally {
+      setIsGeneratingPacket(false);
+    }
+  }
+
   async function handleAlign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -205,9 +246,14 @@ export default function Home() {
     setIsLoading(true);
     setLoadingStartedAt(Date.now());
     setProgressElapsedMs(0);
-    setCopyLabel("Copy");
+    setCopyLabel("Copy lesson");
+    setRunIdLabel("Copy Run ID");
     setSafetyChecks([]);
-    setTraceId("");
+    setAlignment(null);
+    setVisualPacketImages([]);
+    setVisualPacketStatus("idle");
+    setVisualPacketError("");
+    setActiveTab("visual");
 
     if (lessonText.length > MAX_INPUT_CHARACTERS) {
       setError(safetyMessageForCode("INPUT_TOO_LARGE"));
@@ -243,27 +289,17 @@ export default function Home() {
           teacherNote
         })
       });
-      const data = (await response.json()) as AlignmentResponse;
+      const data = (await response.json()) as AlignmentApiResponse;
 
-      if (!response.ok || data.error) {
+      if (!response.ok || data.error || !data.alignedText) {
         setSafetyChecks(data.safetyChecks ?? []);
         throw new Error(data.error || "Alignment failed.");
       }
 
-      setAlignedText(data.alignedText ?? "");
-      setLessonLanguageFocus(data.lessonLanguageFocus);
-      setStudentEvidence(data.studentEvidence ?? []);
-      setAcademicLanguageSupports(data.academicLanguageSupports);
-      setElpacSupports(data.elpacSupports ?? []);
-      setStudentFriendlySuccessCriteria(data.studentFriendlySuccessCriteria ?? []);
-      setTeacherFeedbackMoves(data.teacherFeedbackMoves ?? []);
-      setBriefAlignmentNotes(data.briefAlignmentNotes ?? []);
-      setStandardsUsed(data.standardsUsed ?? []);
-      setQualityChecks(data.qualityChecks ?? []);
-      setSafetyChecks(data.safetyChecks ?? []);
-      setChangeNotes(data.changeNotes ?? []);
-      setAlignmentMode(data.alignmentMode);
-      setTraceId(data.traceId ?? "");
+      const checkedAlignment = data as AlignmentResponse;
+      setAlignment(checkedAlignment);
+      setSafetyChecks(checkedAlignment.safetyChecks ?? []);
+      void requestVisualPacket(checkedAlignment);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Alignment failed.");
     } finally {
@@ -272,14 +308,37 @@ export default function Home() {
     }
   }
 
-  async function handleCopy() {
-    if (!alignedText || !allSafetyChecksPass) {
+  async function handleCopyLesson() {
+    if (!alignment?.alignedText || !allSafetyChecksPass) {
       return;
     }
 
-    await navigator.clipboard.writeText(alignedText);
+    await navigator.clipboard.writeText(alignment.alignedText);
     setCopyLabel("Copied");
-    window.setTimeout(() => setCopyLabel("Copy"), 1600);
+    window.setTimeout(() => setCopyLabel("Copy lesson"), 1600);
+  }
+
+  async function handleCopyRunId() {
+    if (!traceId) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(traceId);
+    setRunIdLabel("Copied");
+    window.setTimeout(() => setRunIdLabel("Copy Run ID"), 1600);
+  }
+
+  async function handleRegenerateVisualPacket() {
+    if (!alignment || isGeneratingPacket) {
+      return;
+    }
+
+    await requestVisualPacket(alignment);
+    setActiveTab("visual");
+  }
+
+  function handleDownloadPacket() {
+    visualPacketImages.forEach((image) => downloadImage(image, packetTitle));
   }
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
@@ -320,26 +379,20 @@ export default function Home() {
     setLessonGoal("");
     setContentExpectations("");
     setTeacherNote("");
-    setAlignedText("");
-    setLessonLanguageFocus(undefined);
-    setStudentEvidence([]);
-    setAcademicLanguageSupports(undefined);
-    setElpacSupports([]);
-    setStudentFriendlySuccessCriteria([]);
-    setTeacherFeedbackMoves([]);
-    setBriefAlignmentNotes([]);
-    setStandardsUsed([]);
-    setQualityChecks([]);
+    setAlignment(null);
+    setVisualPacketImages([]);
+    setVisualPacketStatus("idle");
+    setVisualPacketError("");
+    setVisualPacketModel("");
+    setActiveTab("visual");
     setSafetyChecks([]);
-    setChangeNotes([]);
-    setAlignmentMode(undefined);
-    setTraceId("");
     setError("");
     setFileStatus("");
     setIsParsingFile(false);
     setLoadingStartedAt(null);
     setProgressElapsedMs(0);
-    setCopyLabel("Copy");
+    setCopyLabel("Copy lesson");
+    setRunIdLabel("Copy Run ID");
   }
 
   return (
@@ -349,33 +402,56 @@ export default function Home() {
           <div className="brandMark">EL</div>
           <div className="brandText">
             <strong>EL Lesson Alignment Tool</strong>
-            <span>v0.5 free beta</span>
+            <span>CA K-12 academic language alignment</span>
           </div>
         </div>
-        <div className="statusText">Academic language support for content teachers</div>
+        <div className="topBadges">
+          <span>CA ELD Part I + II + PLD</span>
+          <span>Teacher visual packet</span>
+        </div>
       </header>
 
+      <section className="heroBand">
+        <div>
+          <p className="eyebrow">Lesson-only beta for content teachers</p>
+          <h1>Turn one lesson into a visual CA ELD alignment packet.</h1>
+          <p>
+            The tool analyzes what students are doing with language, identifies the language
+            resources they need, and turns the checked alignment into a readable 1-2 page teacher packet.
+          </p>
+        </div>
+        <div className="methodRail" aria-label="Alignment method">
+          <span>1. Lesson task</span>
+          <span>2. Language demand</span>
+          <span>3. CA ELD rationale</span>
+          <span>4. Visual packet</span>
+        </div>
+      </section>
+
       <div className="workspace">
-        <section className="pane">
-          <div className="panel">
+        <section className="inputPane" aria-label="Lesson input">
+          <div className="panel inputPanel">
             <div className="sectionHeader">
-              <h1>Align Lesson</h1>
+              <div>
+                <p className="eyebrow">Teacher input</p>
+                <h2>Paste or upload one lesson</h2>
+              </div>
+              <label className="fileButton" htmlFor="lessonFile">
+                <UploadIcon />
+                {isParsingFile ? "Reading file" : "Upload file"}
+              </label>
+              <input
+                className="fileInput"
+                id="lessonFile"
+                type="file"
+                accept=".txt,.md,.csv,.docx,.pdf,text/plain,text/markdown,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+                onChange={handleFile}
+              />
             </div>
 
             <form className="form" onSubmit={handleAlign}>
               <div className="field">
-                <label htmlFor="lessonText">Lesson</label>
-                <label className="fileButton" htmlFor="lessonFile">
-                  <UploadIcon />
-                  {isParsingFile ? "Reading file" : "Upload lesson file"}
-                </label>
-                <input
-                  className="fileInput"
-                  id="lessonFile"
-                  type="file"
-                  accept=".txt,.md,.csv,.docx,.pdf,text/plain,text/markdown,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
-                  onChange={handleFile}
-                />
+                <label htmlFor="lessonText">Lesson text</label>
                 <textarea
                   id="lessonText"
                   value={lessonText}
@@ -406,7 +482,7 @@ export default function Home() {
                     id="contentArea"
                     value={contentArea}
                     onChange={(event) => setContentArea(event.target.value)}
-                    placeholder="Required"
+                    placeholder="ELA, math, science..."
                   />
                 </div>
               </div>
@@ -454,7 +530,7 @@ export default function Home() {
                   id="teacherNote"
                   value={teacherNote}
                   onChange={(event) => setTeacherNote(event.target.value)}
-                  placeholder="Optional"
+                  placeholder="Optional: focus on discussion, writing, vocabulary..."
                 />
               </div>
 
@@ -492,246 +568,250 @@ export default function Home() {
               </div>
             </form>
           </div>
-
-          <div className="footerBand">
-            <div className="miniCard">
-              <strong>Format</strong>
-              <span>The lesson comes back in a recognizable teacher-ready shape.</span>
-            </div>
-            <div className="miniCard">
-              <strong>Language</strong>
-              <span>Students get clearer ways to say, do, and write the content learning.</span>
-            </div>
-            <div className="miniCard">
-              <strong>ELPAC</strong>
-              <span>Level 1 and 3 supports keep the same cognitive expectation.</span>
-            </div>
-          </div>
         </section>
 
-        <section className="pane">
-          <div className="panel outputPanel">
-            <div className="sectionHeader">
-              <h2>Aligned output</h2>
-              <div className="outputToolbar">
+        <section className="resultPane" aria-label="Alignment output">
+          <div className="panel resultPanel">
+            <div className="sectionHeader resultHeader">
+              <div>
+                <p className="eyebrow">Teacher output</p>
+                <h2>Visual Packet</h2>
+              </div>
+              <div className="resultActions">
                 <button
                   className="secondaryButton"
                   type="button"
-                  onClick={handleCopy}
-                  disabled={!alignedText || !allSafetyChecksPass}
+                  onClick={handleCopyLesson}
+                  disabled={!alignment?.alignedText || !allSafetyChecksPass}
                 >
                   <CopyIcon />
                   {copyLabel}
                 </button>
+                <button
+                  className="secondaryButton"
+                  type="button"
+                  onClick={handleDownloadPacket}
+                  disabled={!visualPacketImages.length}
+                >
+                  <DownloadIcon />
+                  Download visual packet
+                </button>
               </div>
             </div>
+
             {traceId ? (
               <div className="runInfo" aria-live="polite">
                 <span>Run ID</span>
                 <code>{traceId}</code>
+                <button className="textButton" type="button" onClick={handleCopyRunId}>
+                  {runIdLabel}
+                </button>
               </div>
             ) : null}
-            <div className="outputBody">
-              <div className={alignedText ? "outputBox" : "outputBox placeholder"}>
-                {alignedText ||
-                  "The aligned lesson will keep the submitted format and add academic language support directly into the material."}
-              </div>
 
-              {lessonLanguageFocus ? (
-                <section className="focusPanel" aria-label="Why this helps English learners">
-                  <h3>Why this helps ELs</h3>
-                  <p>
-                    <strong>Goal:</strong> {lessonLanguageFocus.contentGoal}
-                  </p>
-                  <p>
-                    <strong>Language demand:</strong> {lessonLanguageFocus.languageDemand}
-                  </p>
-                  <p>
-                    <strong>Evidence:</strong> {lessonLanguageFocus.studentEvidence}
-                  </p>
+            <div className="tabList" role="tablist" aria-label="Output views">
+              {[
+                ["visual", "Visual Packet"],
+                ["lesson", "Aligned Lesson"],
+                ["rationale", "Rationale"]
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  className={activeTab === id ? "tabButton active" : "tabButton"}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  onClick={() => setActiveTab(id as ResultTab)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="resultBody">
+              {activeTab === "visual" ? (
+                <section className="visualPacketView" aria-label="Teacher visual packet">
+                  {!alignment ? (
+                    <div className="emptyState">
+                      <strong>The generated packet will appear here.</strong>
+                      <span>
+                        It will visualize language demand, CA ELD rationale, ELPAC supports,
+                        success criteria, and teacher moves after alignment passes safety checks.
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {alignment ? (
+                    <div className="packetNotice">
+                      <strong>Review before classroom use.</strong>
+                      <span>
+                        Visual packet is generated from the checked alignment output. The aligned text remains the source of truth.
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {isGeneratingPacket ? (
+                    <div className="packetLoading" aria-live="polite">
+                      <div className="loaderBar" />
+                      <strong>Designing teacher packet</strong>
+                      <span>Creating readable visual pages from the checked alignment, not the raw upload.</span>
+                    </div>
+                  ) : null}
+
+                  {visualPacketStatus === "disabled" ? (
+                    <div className="packetWarning">
+                      Image generation is disabled in this environment. The aligned lesson and rationale are ready.
+                    </div>
+                  ) : null}
+
+                  {visualPacketError ? <div className="packetWarning">{visualPacketError}</div> : null}
+
+                  {visualPacketImages.length ? (
+                    <>
+                      <div className="packetMeta">
+                        <span>Generated with {visualPacketModel || "image model"}</span>
+                        <button
+                          className="textButton"
+                          type="button"
+                          onClick={handleRegenerateVisualPacket}
+                          disabled={isGeneratingPacket}
+                        >
+                          Regenerate visual packet
+                        </button>
+                      </div>
+                      <div className="packetGrid">
+                        {visualPacketImages.map((image) => (
+                          <figure className="packetPage" key={image.pageNumber}>
+                            <img src={imageSrc(image)} alt={image.altText} />
+                            <figcaption>Page {image.pageNumber}</figcaption>
+                          </figure>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
                 </section>
               ) : null}
 
-              {lessonLanguageFocus ||
-              studentEvidence.length ||
-              academicLanguageSupports ||
-              elpacSupports.length ||
-              studentFriendlySuccessCriteria.length ||
-              teacherFeedbackMoves.length ||
-              briefAlignmentNotes.length ||
-              standardsUsed.length ||
-              changeNotes.length ||
-              qualityChecks.length ||
-              safetyChecks.length ? (
-                <div className="evidenceGrid" aria-label="Alignment evidence">
-                  {studentEvidence.length ? (
-                    <section className="evidencePanel">
-                      <h3>Student Evidence</h3>
-                      <ul>
-                        {studentEvidence.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
+              {activeTab === "lesson" ? (
+                <section aria-label="Aligned lesson">
+                  <div className={alignment?.alignedText ? "outputBox" : "outputBox placeholder"}>
+                    {alignment?.alignedText ||
+                      "The aligned lesson will keep the submitted format and add academic language support directly into the material."}
+                  </div>
+                </section>
+              ) : null}
 
-                  {studentFriendlySuccessCriteria.length ? (
-                    <section className="evidencePanel">
-                      <h3>Success Criteria</h3>
-                      <ul>
-                        {studentFriendlySuccessCriteria.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
+              {activeTab === "rationale" ? (
+                <section className="rationaleView" aria-label="Alignment rationale">
+                  {alignment?.lessonLanguageFocus ? (
+                    <div className="languageDemandPanel">
+                      <p className="eyebrow">What students do with language</p>
+                      <h3>{alignment.lessonLanguageFocus.contentGoal}</h3>
+                      <p>{alignment.lessonLanguageFocus.languageDemand}</p>
+                      <strong>{alignment.lessonLanguageFocus.studentEvidence}</strong>
+                    </div>
+                  ) : (
+                    <div className="emptyState">
+                      <strong>Rationale will appear after alignment.</strong>
+                      <span>Part I, Part II, and PLD will be shown together with visible rationale.</span>
+                    </div>
+                  )}
 
-                  {elpacSupports.length ? (
-                    <section className="evidencePanel">
-                      <h3>ELPAC Supports</h3>
-                      <ul>
-                        {elpacSupports.map((support) => (
-                          <li key={support.level}>
-                            <strong>Level {support.level}: {support.proficiencyBand}</strong>
-                            <span>{support.cognitiveDemandNote}</span>
-                            <span>{support.supports.join(" ")}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
+                  {alignment ? (
+                    <div className="evidenceGrid" aria-label="Alignment evidence">
+                      <section className="evidencePanel accentA">
+                        <h3>Student Evidence</h3>
+                        <ul>
+                          {alignment.studentEvidence.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </section>
 
-                  {teacherFeedbackMoves.length ? (
-                    <section className="evidencePanel">
-                      <h3>Teacher Moves</h3>
-                      <ul>
-                        {teacherFeedbackMoves.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
-
-                  {academicLanguageSupports ? (
-                    <section className="evidencePanel">
-                      <h3>Academic Language</h3>
-                      <ul>
-                        <li>
-                          <strong>Vocabulary</strong>
-                          <span>{academicLanguageSupports.vocabulary.join(", ")}</span>
-                        </li>
-                        <li>
-                          <strong>Functions</strong>
-                          <span>{academicLanguageSupports.languageFunctions.join(", ")}</span>
-                        </li>
-                        <li>
-                          <strong>Frames and stems</strong>
-                          <span>
-                            {[
-                              ...academicLanguageSupports.sentenceFrames,
-                              ...academicLanguageSupports.discussionOrWritingStems
-                            ].join(" ")}
-                          </span>
-                        </li>
-                        {academicLanguageSupports.originalModelLanguage.length ? (
+                      <section className="evidencePanel accentB">
+                        <h3>Academic Language</h3>
+                        <ul>
                           <li>
-                            <strong>Original model language</strong>
-                            <span>{academicLanguageSupports.originalModelLanguage.join(" ")}</span>
+                            <strong>Vocabulary</strong>
+                            <span>{alignment.academicLanguageSupports.vocabulary.join(", ")}</span>
                           </li>
-                        ) : null}
-                      </ul>
-                    </section>
-                  ) : null}
-
-                  {briefAlignmentNotes.length ? (
-                    <section className="evidencePanel">
-                      <h3>Brief Notes</h3>
-                      <ul>
-                        {briefAlignmentNotes.map((note) => (
-                          <li key={note}>{note}</li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
-
-                  {changeNotes.length || alignmentMode || traceId ? (
-                    <section className="evidencePanel">
-                      <h3>Change Notes</h3>
-                      <ul>
-                        {changeNotes.map((note) => (
-                          <li key={`${note.anchor}-${note.note}`}>
-                            <strong>{note.changeType.replace("_", " ")}</strong>
-                            <span>{note.note}</span>
-                          </li>
-                        ))}
-                        {alignmentMode ? (
                           <li>
-                            <strong>Mode</strong>
-                            <span>{alignmentMode === "llm" ? "LLM alignment with traced review" : "Deterministic local alignment"}</span>
+                            <strong>Functions</strong>
+                            <span>{alignment.academicLanguageSupports.languageFunctions.join(", ")}</span>
                           </li>
-                        ) : null}
-                        {traceId ? (
                           <li>
-                            <strong>Run ID</strong>
-                            <span>{traceId}</span>
+                            <strong>Frames and stems</strong>
+                            <span>
+                              {[
+                                ...alignment.academicLanguageSupports.sentenceFrames,
+                                ...alignment.academicLanguageSupports.discussionOrWritingStems
+                              ].join(" ")}
+                            </span>
                           </li>
-                        ) : null}
-                      </ul>
-                    </section>
-                  ) : null}
+                        </ul>
+                      </section>
 
-                  {standardsUsed.length ? (
-                    <section className="evidencePanel">
-                      <h3>Standards Used</h3>
-                      <ul>
-                        {standardsUsed.map((standard) => (
-                          <li key={standard.id}>
-                            <strong>{standard.id}</strong>
-                            <span>{standard.teacherFriendlySummary}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
+                      <section className="evidencePanel accentC">
+                        <h3>ELPAC Supports</h3>
+                        <ul>
+                          {alignment.elpacSupports.map((support) => (
+                            <li key={support.level}>
+                              <strong>Level {support.level}: {support.proficiencyBand}</strong>
+                              <span>{support.cognitiveDemandNote}</span>
+                              <span>{support.supports.join(" ")}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
 
-                  {qualityChecks.length ? (
-                    <section className="evidencePanel">
-                      <h3>Quality Checks</h3>
-                      <ul>
-                        {qualityChecks.map((check) => (
-                          <li key={check.id}>
-                            <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
-                            <span>{check.detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
+                      <section className="evidencePanel accentD">
+                        <h3>Success Criteria</h3>
+                        <ul>
+                          {alignment.studentFriendlySuccessCriteria.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </section>
 
-                  {safetyChecks.length ? (
-                    <section className="evidencePanel">
-                      <h3>Safety Checks</h3>
-                      <ul>
-                        {safetyChecks.map((check) => (
-                          <li key={check.id}>
-                            <strong>{check.passed ? "Pass" : "Review"}: {check.label}</strong>
-                            <span>{check.detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
+                      <section className="evidencePanel accentE">
+                        <h3>Teacher Moves</h3>
+                        <ul>
+                          {alignment.teacherFeedbackMoves.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </section>
+
+                      <section className="evidencePanel standardsPanel">
+                        <h3>CA ELD Rationale</h3>
+                        <div className="standardsStack">
+                          {["Part I", "Part II", "PLD"].map((part) => {
+                            const standards = alignment.standardsUsed.filter((standard) => standard.part === part);
+                            return (
+                              <div className="standardCard" key={part}>
+                                <strong>{part}</strong>
+                                <span>{standards.map((standard) => standard.id).join(", ")}</span>
+                                <p>
+                                  {standards
+                                    .map((standard) => standard.teacherFriendlySummary)
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    </div>
                   ) : null}
-                </div>
+                </section>
               ) : null}
             </div>
           </div>
 
-          <div className="noteStrip">
-            <span aria-hidden="true">●</span>
-            <span>
-              Student-identifiable data should not be pasted into the tool. Use lesson
-              materials without student names, IDs, or private student details.
-            </span>
+          <div className="guardrailStrip">
+            <span>Student-identifiable data should not be pasted into the tool.</span>
+            <span>Uploads are parsed in the browser; checked text is used for alignment.</span>
           </div>
           <div className="sourceStrip">
             This free beta uses California English Language Development Standards published
